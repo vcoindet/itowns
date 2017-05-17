@@ -41,7 +41,17 @@ global.URL = function URL(str) {
     return url.parse(str);
 };
 global.document = new function _d() {
-    this.createElement = () => ({});
+    this.createElement = (type) => {
+        const r = {};
+        if (type == 'canvas') {
+            r.getContext = () => {
+                const c = {};
+                c.drawImage = () => {};
+                return c;
+            };
+        }
+        return r;
+    };
 
     this.createElementNS = (foo, type) => {
         var r = {};
@@ -50,9 +60,11 @@ global.document = new function _d() {
         if (type == 'img') {
             r.addEventListener = (evt, fn) => {
                 if (evt == 'load') {
-                    r.loadListener = fn;
+                    r.onload = fn;
                 }
             };
+            r.width = 256;
+            r.height = 256;
 
             var src;
             Object.defineProperty(
@@ -62,14 +74,13 @@ global.document = new function _d() {
                     set: (u) => {
                         src = u;
                         fetch(u).then(resp => resp.buffer()).then(() => {
-                            if (r.loadListener) {
-                                r.loadListener({ width: 256, height: 256 });
+                            if (r.onload) {
+                                r.onload();
                             }
                         });
                     },
                 });
         }
-
         return r;
     };
 
@@ -82,8 +93,13 @@ global.document = new function _d() {
         devicePixelRatio: 1.0,
     });
 }();
+
+global.Image = function Image() {
+    return document.createElementNS(0, 'img');
+};
+
 global.window = {
-    addEventListener() {},
+    addEventListener: () => {},
     setTimeout,
 };
 global.Event = Object;
@@ -121,6 +137,7 @@ global.renderer = {
     },
     capabilities: {
         logarithmicDepthBuffer: true,
+        maxTextureSize: 4096,
     },
     setClearColor: () => {},
     setViewport: () => {},
