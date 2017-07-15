@@ -3,7 +3,7 @@ import { C, UNIT } from '../../Core/Geographic/Coordinates';
 
 function OBB(min, max, lookAt, translate) {
     THREE.Object3D.call(this);
-    this.box3D = new THREE.Box3(min, max);
+    this.box3D = new THREE.Box3(min.clone(), max.clone());
 
     this.natBox = this.box3D.clone();
 
@@ -28,6 +28,14 @@ function OBB(min, max, lookAt, translate) {
 
 OBB.prototype = Object.create(THREE.Object3D.prototype);
 OBB.prototype.constructor = OBB;
+
+OBB.prototype.clone = function clone() {
+    const cOBB = new OBB(this.natBox.min, this.natBox.max);
+    cOBB.position.copy(this.position);
+    cOBB.quaternion.copy(this.quaternion);
+    this.oPosition = this.oPosition.clone();
+    return cOBB;
+};
 
 OBB.prototype.update = function update() {
     this.updateMatrixWorld(true);

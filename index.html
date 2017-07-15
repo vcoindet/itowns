@@ -43,11 +43,11 @@ and open the template in the editor.
             var menuGlobe = new GuiTools('menuDiv', globeView);
             menuGlobe.view = globeView;
 
-            var promises = []
+            var promises = [];
             promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/Ortho.json').then(function(result) { return globeView.addLayer(result); }));
-            promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/OrthosCRS.json').then(function(result) { return globeView.addLayer(result); }));
-            promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/ScanEX.json').then(function(result) { return globeView.addLayer(result); }));
-            promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/Region.json').then(function(result) { return globeView.addLayer(result); }));
+            // promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/OrthosCRS.json').then(function(result) { return globeView.addLayer(result); }));
+            // promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/ScanEX.json').then(function(result) { return globeView.addLayer(result); }));
+            // promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/Region.json').then(function(result) { return globeView.addLayer(result); }));
 
             promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/WORLD_DTM.json').then(function(result) { return globeView.addLayer(result); }));
             promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/IGN_MNT_HIGHRES.json').then(function(result) { return globeView.addLayer(result); }));
@@ -64,6 +64,7 @@ and open the template in the editor.
             globeView.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
                 // eslint-disable-next-line no-console
                 console.info('Globe initialized');
+                globeView.controls.setRange(500000, true);
             });
 
             new debug.Debug(globeView, viewerDiv);
