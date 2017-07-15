@@ -6,7 +6,7 @@
 // conformance/glsl/bugs/nested-loops-with-break-and-continue.html
 // Resolve CHROME unstable 52
 
-const vec4 CFog = vec4( 0.76, 0.85, 1.0, 1.0);
+const vec4 CFog = vec4( 0.75, 0.85, 0.95, 1.0);
 const vec4 CWhite = vec4(1.0,1.0,1.0,1.0);
 const vec4 CBlueOcean = vec4( 0.04, 0.23, 0.35, 1.0);
 const vec4 COrange = vec4( 1.0, 0.3, 0.0, 1.0);

@@ -103,7 +103,7 @@ function GlobeView(viewerDiv, coordCarto, options = {}) {
     this.camera.camera3D.updateProjectionMatrix();
     this.camera.camera3D.updateMatrixWorld(true);
 
-
+    this.mfogDistance = 1000000000.0;
     // Configure tiles
     const nodeInitFn = function nodeInitFn(context, layer, parent, node) {
         node.material.setLightingOn(layer.lighting.enable);
@@ -234,6 +234,8 @@ function GlobeView(viewerDiv, coordCarto, options = {}) {
     this.preRender = () => {
         var len = this.camera.position().length();
         var lim = size * 1.1;
+
+        this.fogDistance = this.mfogDistance * Math.pow((len - 6300000) / 25000000, 1.6);
 
         if (len < lim) {
             var t = Math.pow(Math.cos((lim - len) / (lim - size * 0.9981) * Math.PI * 0.5), 1.5);
