@@ -30,10 +30,11 @@ BuilderEllipsoidTile.prototype.Prepare = function Prepare(params) {
 
 // get center tile in cartesian 3D
 BuilderEllipsoidTile.prototype.Center = function Center(params) {
-    params.center = params.extent.center().as('EPSG:4978').xyz();
+    const center = params.extent.center().as('EPSG:4978');
+    params.center = center.xyz();
+    params.center.normal = center.normal;
     return params.center;
 };
-
 // get position 3D cartesian
 BuilderEllipsoidTile.prototype.VertexPosition = function VertexPosition(params) {
     params.cartesianPosition = new C.EPSG_4326_Radians(
@@ -44,7 +45,7 @@ BuilderEllipsoidTile.prototype.VertexPosition = function VertexPosition(params) 
 
 // get normal for last vertex
 BuilderEllipsoidTile.prototype.VertexNormal = function VertexNormal(params) {
-    return params.cartesianPosition.xyz().normalize();
+    return params.cartesianPosition.normal;
 };
 
 // coord u tile to projected

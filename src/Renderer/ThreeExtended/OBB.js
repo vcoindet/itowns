@@ -1,9 +1,9 @@
-import * as THREE from 'three';
+import { Quaternion, Vector3, Vector2, Plane, Box3, Object3D } from 'three';
 import { C, UNIT } from '../../Core/Geographic/Coordinates';
 
 function OBB(min, max, lookAt, translate) {
-    THREE.Object3D.call(this);
-    this.box3D = new THREE.Box3(min.clone(), max.clone());
+    Object3D.call(this);
+    this.box3D = new Box3(min.clone(), max.clone());
 
     this.natBox = this.box3D.clone();
 
@@ -18,7 +18,7 @@ function OBB(min, max, lookAt, translate) {
         this.translateZ(translate.z);
     }
 
-    this.oPosition = new THREE.Vector3();
+    this.oPosition = new Vector3();
 
     this.update();
 
@@ -26,7 +26,7 @@ function OBB(min, max, lookAt, translate) {
     this.z = { min: 0, max: 0 };
 }
 
-OBB.prototype = Object.create(THREE.Object3D.prototype);
+OBB.prototype = Object.create(Object3D.prototype);
 OBB.prototype.constructor = OBB;
 
 OBB.prototype.clone = function clone() {
@@ -67,21 +67,21 @@ OBB.prototype.addHeight = function addHeight(minz, maxz) {
 
     this.update();
 
-    return new THREE.Vector2(nHalfSize - depth * 0.5, translaZ);
+    return new Vector2(nHalfSize - depth * 0.5, translaZ);
 
     // TODO <---- à vérifier
 };
 
 OBB.prototype._points = function _points() {
     var points = [
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3(),
-        new THREE.Vector3(),
+        new Vector3(),
+        new Vector3(),
+        new Vector3(),
+        new Vector3(),
+        new Vector3(),
+        new Vector3(),
+        new Vector3(),
+        new Vector3(),
     ];
 
     points[0].set(this.box3D.max.x, this.box3D.max.y, this.box3D.max.z);
@@ -137,18 +137,24 @@ OBB.extentToOBB = function extentToOBB(extent, minHeight = 0, maxHeight = 0) {
     cardinals.push(new C.EPSG_4326_Radians(phiStart, thetaStart + bboxDimension.y * 0.5));
     cardinals.push(extent.center());
 
+    // const side1 = new Vector3().subVectors(cardinals[0].as('EPSG:4978').xyz(), cardinals[2].as('EPSG:4978').xyz());
+    // const side2 = new Vector3().subVectors(cardinals[0].as('EPSG:4978').xyz(), cardinals[6].as('EPSG:4978').xyz());
+    // const normal = new Vector3().crossVectors(side1, side2).normalize();
+
+    // console.log(normal, planeNormal);
+
     var cardin3DPlane = [];
 
-    var maxV = new THREE.Vector3(-1000, -1000, -1000);
-    var minV = new THREE.Vector3(1000, 1000, 1000);
+    var maxV = new Vector3(-1000, -1000, -1000);
+    var minV = new Vector3(1000, 1000, 1000);
     var halfMaxHeight = 0;
-    var planeZ = new THREE.Quaternion();
-    var qRotY = new THREE.Quaternion();
-    var tangentPlaneAtOrigin = new THREE.Plane(normal);
+    var planeZ = new Quaternion();
+    var qRotY = new Quaternion();
+    var tangentPlaneAtOrigin = new Plane(normal);
 
-    planeZ.setFromUnitVectors(normal, new THREE.Vector3(0, 0, 1));
+    planeZ.setFromUnitVectors(normal, new Vector3(0, 0, 1));
     qRotY.setFromAxisAngle(
-        new THREE.Vector3(0, 0, 1), -extent.center().longitude(UNIT.RADIAN));
+        new Vector3(0, 0, 1), -extent.center().longitude(UNIT.RADIAN));
     qRotY.multiply(planeZ);
 
     for (var i = 0; i < cardinals.length; i++) {
@@ -164,13 +170,13 @@ OBB.extentToOBB = function extentToOBB(extent, minHeight = 0, maxHeight = 0) {
 
     var halfLength = Math.abs(maxV.y - minV.y) * 0.5;
     var halfWidth = Math.abs(maxV.x - minV.x) * 0.5;
-    var max = new THREE.Vector3(halfLength, halfWidth, halfMaxHeight);
-    var min = new THREE.Vector3(-halfLength, -halfWidth, -halfMaxHeight);
+    var max = new Vector3(halfLength, halfWidth, halfMaxHeight);
+    var min = new Vector3(-halfLength, -halfWidth, -halfMaxHeight);
 
     // delta is the distance between line `([6],[4])` and the point `[5]`
     // These points [6],[5],[4] aren't aligned because of the ellipsoid shape
     var delta = halfWidth - Math.abs(cardin3DPlane[5].x);
-    var translate = new THREE.Vector3(0, delta, -halfMaxHeight);
+    var translate = new Vector3(0, delta, -halfMaxHeight);
     var obb = new OBB(min, max, normal, translate);
     // for 3D
     if (minHeight !== 0 || maxHeight !== 0) {

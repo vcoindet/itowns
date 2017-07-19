@@ -25,7 +25,7 @@ function TileMesh(geometry, params) {
 
     this.geometry = geometry;
     // this.normal use in set Z DTM
-    this.normal = params.center.clone().normalize();
+    this.normal = params.center.normal;
     // this.center = params.center.clone();
     this.obb = this.geometry.OBB.clone();
 

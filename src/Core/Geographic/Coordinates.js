@@ -111,9 +111,12 @@ function _convert(coordsIn, newCrs) {
         }
     } else {
         if (coordsIn.crs === 'EPSG:4326' && newCrs === 'EPSG:4978') {
-            const cartesian = ellipsoid.cartographicToCartesian(coordsIn);
-            return new Coordinates(newCrs,
+            const normal = new THREE.Vector3();
+            const cartesian = ellipsoid.cartographicToCartesian(coordsIn, normal);
+            const coord = new Coordinates(newCrs,
                                    cartesian.x, cartesian.y, cartesian.z);
+            coord.normal = normal;
+            return coord;
         }
 
         if (coordsIn.crs === 'EPSG:4978' && newCrs === 'EPSG:4326') {

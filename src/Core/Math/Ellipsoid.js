@@ -44,10 +44,12 @@ Ellipsoid.prototype.setSize = function setSize(size) {
 };
 
 
-Ellipsoid.prototype.cartographicToCartesian = function cartographicToCartesian(coordCarto) {
-    // var n;
+Ellipsoid.prototype.cartographicToCartesian = function cartographicToCartesian(coordCarto, normal) {
     var k = new THREE.Vector3();
     var n = this.geodeticSurfaceNormalCartographic(coordCarto);
+    if (normal) {
+        normal.copy(n);
+    }
 
     k.multiplyVectors(this._radiiSquared, n);
 
