@@ -380,7 +380,7 @@ function GlobeControls(view, target, radius, options = {}) {
     this.zoomSpeed = options.zoomSpeed || 2.0;
 
     // Limits to how far you can dolly in and out ( PerspectiveCamera only )
-    this.minDistance = options.minDistance || 30;
+    this.minDistance = options.minDistance || 100;
     this.maxDistance = options.maxDistance || radius * 8.0;
 
     // Limits to how far you can zoom in and out ( OrthographicCamera only )
@@ -640,6 +640,33 @@ function GlobeControls(view, target, radius, options = {}) {
             // rotate point back to "camera-up-vector-is-up" space
             // offset.applyQuaternion( quatInverse );
             this.camera.position.copy(cameraTargetOnGlobe.localToWorld(offset));
+        }
+
+        const location = this.getCameraLocation();
+        let theTile;
+
+        function tO(obj) {
+            if (obj.extent) {
+                if (obj.extent.isPointInside(location)) {
+                    theTile = obj;
+                }
+            }
+        }
+
+        if (view.wgs84TileLayer) {
+            for (const node of view.wgs84TileLayer.level0Nodes) {
+                if (node.extent.isPointInside(location)) {
+                    node.traverse(tO);
+                }
+            }
+        }
+
+        if (theTile) {
+            const alti = theTile.OBB().z.max + this.minDistance;
+            const distance = location.altitude() - alti;
+            if (distance < 0) {
+                this.camera.position.setLength(this.camera.position.length() - distance);
+            }
         }
 
         this.camera.lookAt(movingCameraTargetOnGlobe);
