@@ -8,7 +8,7 @@ import Extent from '../../Geographic/Extent';
 import MathExtended from '../../Math/MathExtended';
 import Capabilities from '../../System/Capabilities';
 import PrecisionQualifier from '../../../Renderer/Shader/Chunk/PrecisionQualifier.glsl';
-import { init3dTilesLayer } from '../../../Process/3dTilesProcessing';
+import { init3dTilesLayer } from '../../../Process/3dTilesProcessingTemporal';
 
 
 function $3dTilesIndex(tileset, baseURL) {
@@ -174,6 +174,11 @@ function configureTile(tile, layer, metadata, parent) {
         tile.add(tile.boundingVolume.region);
     }
     tile.updateMatrixWorld();
+    // temporal
+    if (metadata.boundingVolume.yearOfConstruction && metadata.boundingVolume.yearOfDemolition) {
+        tile.boundingVolume.yearOfConstruction = metadata.boundingVolume.yearOfConstruction;
+        tile.boundingVolume.yearOfDemolition = metadata.boundingVolume.yearOfDemolition;
+    }
 }
 
 const textDecoder = new TextDecoder('utf-8');
