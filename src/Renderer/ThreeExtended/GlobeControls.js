@@ -643,29 +643,59 @@ function GlobeControls(view, target, radius, options = {}) {
         }
 
         const location = this.getCameraLocation();
-        let theTile;
+        let min = 5000;
+        const neightbour = [];
 
-        function tO(obj) {
-            if (obj.extent) {
-                if (obj.extent.isPointInside(location)) {
-                    theTile = obj;
+        function t1(node) {
+            if (node.extent) {
+                if (node.children.length === 1) {
+                    const center = node.extent.center();
+                    const longitude = location.longitude(center._internalStorageUnit) - center.longitude();
+                    const latitude = location.latitude(center._internalStorageUnit) - center.latitude();
+                    const distance = Math.sqrt(longitude * longitude + latitude * latitude);
+                    if (distance < min) {
+                        neightbour.push({ z: node.OBB().z.max, distance });
+                        neightbour.sort((a, b) => a.distance - b.distance);
+                        if (neightbour.length > 16) {
+                            neightbour.pop();
+                        }
+                        min = neightbour[neightbour.length - 1].distance;
+                    }
                 }
             }
         }
 
         if (view.wgs84TileLayer) {
             for (const node of view.wgs84TileLayer.level0Nodes) {
-                if (node.extent.isPointInside(location)) {
-                    node.traverse(tO);
+                if (node.children.length > 1 && node.extent.isPointInside(location)) {
+                    node.traverse(t1);
                 }
             }
         }
 
-        if (theTile) {
-            const alti = theTile.OBB().z.max + this.minDistance;
-            const distance = location.altitude() - alti;
+        if (neightbour.length > 0) {
+            let a = 0;
+            let d = 0;
+            neightbour.forEach((o) => {
+                a += (1 + 1 / o.distance) * o.z;
+                d += 1 + 1 / o.distance;
+            });
+            const altitude = a / d; // theTile.OBB().z.max
+            const alti = altitude + this.minDistance * 2;
+            let distance = location.altitude() - alti;
+            const ad = this.minDistance * 2;
+
             if (distance < 0) {
                 this.camera.position.setLength(this.camera.position.length() - distance);
+                // if (state === CONTROL_STATE.PAN || state === CONTROL_STATE.MOVE_GLOBE) {
+                //     movingCameraTargetOnGlobe.setLength(movingCameraTargetOnGlobe.length() - distance);
+                // }
+            } else if (distance < ad) {
+                distance = (-Math.pow(Math.cos((distance - ad) * Math.PI / (2 * ad)), 0.5) + 1) * ad;
+                this.camera.position.setLength(this.camera.position.length() + distance);
+                // if (state === CONTROL_STATE.PAN || state === CONTROL_STATE.MOVE_GLOBE) {
+                //     movingCameraTargetOnGlobe.setLength(movingCameraTargetOnGlobe.length() + distance);
+                // }
             }
         }
 
