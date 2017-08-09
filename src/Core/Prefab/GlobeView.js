@@ -238,6 +238,7 @@ function GlobeView(viewerDiv, coordCarto, options = {}) {
         this.controls = new GlobeControls(this, positionTargetCamera.as('EPSG:4978').xyz(), size);
     }
 
+    const mfogDistance = size * 160.0;
     this._renderState = RendererConstant.FINAL;
     const renderer = this.mainLoop.gfxEngine.renderer;
     this.preRender = () => {
@@ -246,6 +247,8 @@ function GlobeView(viewerDiv, coordCarto, options = {}) {
         var len = v.distanceTo(this.camera.camera3D.position);
         v.setFromMatrixScale(wgs84TileLayer.object3d.matrixWorld);
         var lim = v.x * size * 1.1;
+
+        this.fogDistance = mfogDistance * Math.pow((len - size * 0.99) * 0.25 / size, 1.5);
 
         if (len < lim) {
             var t = Math.pow(Math.cos((lim - len) / (lim - v.x * size * 0.9981) * Math.PI * 0.5), 1.5);
