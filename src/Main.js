@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 // This is temporary, until we're able to build a vendor.js
 // containing our dependencies.
+
 export { THREE };
-export { default as proj4 } from 'proj4';
 
 export { default as Coordinates, UNIT } from './Core/Geographic/Coordinates';
 export { default as Extent } from './Core/Geographic/Extent';
@@ -14,7 +14,7 @@ export { default as GpxUtils } from './Core/Scheduler/Providers/GpxUtils';
 export { default as PlanarView, createPlanarLayer } from './Core/Prefab/PlanarView';
 export { default as Fetcher } from './Core/Scheduler/Providers/Fetcher';
 export { default as View } from './Core/View';
-export { process3dTilesNode, init3dTilesLayer, $3dTilesCulling, $3dTilesSubdivisionControl, pre3dTilesUpdate } from './Process/3dTilesProcessing';
+// export { process3dTilesNode, init3dTilesLayer, $3dTilesCulling, $3dTilesSubdivisionControl, pre3dTilesUpdate } from './Process/3dTilesProcessing';
 export { default as FeatureProcessing } from './Process/FeatureProcessing';
 export { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation } from './Process/LayeredMaterialNodeProcessing';
 export { processTiledGeometryNode, initTiledGeometryLayer } from './Process/TiledNodeProcessing';

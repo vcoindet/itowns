@@ -230,3 +230,4 @@ $3dTiles_Provider.prototype.executeCommand = function executeCommand(command) {
 };
 
 export default $3dTiles_Provider;
+// module.exports = $3dTiles_Provider;

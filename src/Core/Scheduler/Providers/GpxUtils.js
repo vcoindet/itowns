@@ -9,7 +9,9 @@ import Line from 'three.meshline';
 import Fetcher from './Fetcher';
 import Coordinates from '../../Geographic/Coordinates';
 import Capabilities from '../../System/Capabilities';
-import { patchMaterialForLogDepthSupport } from './3dTiles_Provider';
+// import { patchMaterialForLogDepthSupport } from './3dTiles_Provider';
+
+const patchMaterialForLogDepthSupport = __NO3DTILES__ ? null : require('./3dTiles_Provider').default;
 
 function _gpxToWayPointsArray(gpxXML) {
     return gpxXML.getElementsByTagName('wpt');

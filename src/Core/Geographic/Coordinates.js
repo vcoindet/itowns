@@ -5,11 +5,12 @@
  */
 
 import * as THREE from 'three';
-import proj4 from 'proj4';
 import mE from '../Math/MathExtended';
 import Ellipsoid from '../Math/Ellipsoid';
 
 const projectionCache = {};
+
+const proj4 = __NOPROJ4__ ? null : require('proj4').default;
 
 export function ellipsoidSizes() {
     return {
