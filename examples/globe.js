@@ -5,7 +5,7 @@
 var positionOnGlobe = { longitude: 2.351323, latitude: 48.856712, altitude: 25000000 };
 var promises = [];
 var miniView;
-var minDistance = 10000000;
+var minDistance = 8000000;
 var maxDistance = 30000000;
 
 // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
@@ -24,7 +24,7 @@ if (!renderer) {
         // `limit globe' subdivision level:
         // we're don't need a precise globe model
         // since the mini globe will always be seen from a far point of view (see minDistance above)
-        maxSubdivisionLevel: 2,
+        maxSubdivisionLevel: 3,
         // Don't instance default controls since miniview's camera will be synced
         // on the main view's one (see globeView.onAfterRender)
         noControls: true,
@@ -38,8 +38,8 @@ if (!renderer) {
     // update miniview's camera with the globeView's camera position
     globeView.onAfterRender = function onAfterRender() {
         // clamp distance camera from globe
-        var distanceCamera = globeView.camera.camera3D.position.length();
-        var distance = Math.min(Math.max(distanceCamera * 1.5, minDistance), maxDistance);
+        var range = globeView.controls.getRange();
+        var distance = Math.min(Math.max(range * 1.5, minDistance), maxDistance);
         var camera = miniView.camera.camera3D;
         // Update target miniview's camera
         camera.position.copy(globeView.controls.moveTarget()).setLength(distance);
