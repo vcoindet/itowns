@@ -28,6 +28,7 @@ view.tileLayer.disableSkirt = true;
 flyControls = new itowns.FlyControls(view, { focusOnClick: true });
 flyControls.moveSpeed = 3000;
 
+
 // Add an WMS imagery layer (see WMS_Provider* for valid options)
 view.addLayer({
     url: 'https://download.data.grandlyon.com/wms/grandlyon',
@@ -38,13 +39,7 @@ view.addLayer({
     id: 'wms_imagery',
     name: 'Ortho2009_vue_ensemble_16cm_CC46',
     projection: 'EPSG:3946',
-    transparent: false,
-    extent: extent,
-    bbox_url: 'wsen',
-    updateStrategy: {
-        type: 0,
-        options: {},
-    },
+    axisOrder: 'wsen',
     options: {
         mimetype: 'image/jpeg',
     },
@@ -59,11 +54,8 @@ view.addLayer({
     version: '1.3.0',
     id: 'wms_elevation',
     name: 'MNT2012_Altitude_10m_CC46',
-    style: '',
     projection: 'EPSG:3946',
-    transparent: false,
-    extent: extent,
-    bbox_url: 'wsen',
+    axisOrder: 'wsen',
     heightMapWidth: 256,
     options: {
         mimetype: 'image/jpeg',
