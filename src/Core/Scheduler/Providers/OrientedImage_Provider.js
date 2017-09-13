@@ -3,63 +3,47 @@
  * Class: OrientedImage_Provider
  * Description: Provides Oriented Image data for immersive navigation
  */
-
+import * as THREE from 'three';
 import Extent from '../../Geographic/Extent';
 import Provider from './Provider';
 import Fetcher from './Fetcher';
 import CacheRessource from './CacheRessource';
 import GeoJSON2Feature from '../../../Renderer/ThreeExtended/GeoJSON2Feature';
-import Feature2Mesh from '../../../Renderer/ThreeExtended/Feature2Mesh';
 
 function OrientedImage_Provider() {
     this.cache = CacheRessource();
-    // this.pointOrder = new Map();
 }
 
 OrientedImage_Provider.prototype = Object.create(Provider.prototype);
+
 OrientedImage_Provider.prototype.constructor = OrientedImage_Provider;
 
 OrientedImage_Provider.prototype.preprocessDataLayer = function preprocessDataLayer(layer) {
-    /*
-    if (!layer.typeName) {
-        throw new Error('layer.typeName is required.');
-    }
-    */
-
     layer.format = layer.options.mimetype || 'json';
-    layer.crs = layer.projection || 'EPSG:4326';
+
+    layer.feature = null;
+    layer.currentPano = -1;
     if (!(layer.extent instanceof Extent)) {
         layer.extent = new Extent(layer.projection, layer.extent);
     }
+    var promises = [];
+    promises.push(Fetcher.json(layer.calibration, layer.networkOptions));
+    promises.push(Fetcher.json(layer.url, layer.networkOptions));
+    return Promise.all(promises).then((res) => { layer.calibration = res[0]; layer.feature = GeoJSON2Feature.parse(layer.crsOut, res[1]); });
 };
-
 
 OrientedImage_Provider.prototype.tileInsideLimit = function tileInsideLimit(tile, layer) {
     return (layer.level === undefined || tile.level === layer.level) && layer.extent.intersect(tile.extent);
 };
 
 OrientedImage_Provider.prototype.executeCommand = function executeCommand(command) {
-    console.log('executeCommand');
     const layer = command.layer;
     const tile = command.requester;
     const destinationCrs = command.view.referenceCrs;
-
-    // TODO : support xml, gml2
-    const supportedFormats = {
-        json: this.getFeatures.bind(this),
-        geojson: this.getFeatures.bind(this),
-    };
-
-    const func = supportedFormats[layer.format];
-    if (func) {
-        return func(destinationCrs, tile, layer, command).then(result => command.resolve(result));
-    } else {
-        return Promise.reject(new Error(`Unsupported mimetype ${layer.format}`));
-    }
+    return this.getFeatures(destinationCrs, tile, layer, command).then(result => command.resolve(result));
 };
 
 function assignLayer(object, layer) {
-    console.log('assignLayer');
     if (object) {
         object.layer = layer.id;
         object.layers.set(layer.threejsLayer);
@@ -72,31 +56,36 @@ function assignLayer(object, layer) {
 
 // load data for a layer/tile/crs
 OrientedImage_Provider.prototype.getFeatures = function getFeatures(crs, tile, layer) {
-    console.log('getFeatures');
-    if (!layer.tileInsideLimit(tile, layer) || tile.material === null) {
-        return Promise.resolve();
+    if (layer.feature && layer.feature.geometries[0])
+    {
+        var geom = layer.feature.geometries[0];
+        var sel = [];
+        for (const coordinate of geom.coordinates) {
+            if (tile.extent.isPointInside(coordinate)) {
+                sel.push(coordinate._values[0]);
+                sel.push(coordinate._values[1]);
+                sel.push(coordinate._values[2]);
+            }
+        }
+        if (sel.length) {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array(sel.length);
+            let indice = 0;
+            for (const v of sel) {
+                vertices[indice] = v - sel[indice % 3];
+                indice += 1;
+            }
+            geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            const P = new THREE.Points(geometry);
+            P.position.set(sel[0], sel[1], sel[2]);
+            return Promise.resolve(assignLayer(P, layer));
+        }
     }
-
-    // in this first version there is only one constant url in geoJson for all orientedImage in the layer
-    const url = layer.url;
-    const result = {};
-
-    console.log('url:');
-    console.log(url);
-    result.feature = this.cache.getRessource(url);
-
-    console.log('result.feature:');
-    console.log(result.feature);
-
-    if (result.feature !== undefined) {
-        return Promise.resolve(result);
-    }
-    return Fetcher.json(url, layer.networkOptions).then(geojson => assignLayer(Feature2Mesh.convert(GeoJSON2Feature.parse(crs, geojson, tile.extent)), layer));
+    return Promise.resolve();
 };
 
 // Order : lat, long or long, lat
 OrientedImage_Provider.prototype.getPointOrder = function getPointOrder(crs) {
-    console.log('getPointOrder');
     if (this.pointOrder[crs]) {
         return this.pointOrder[crs];
     }
