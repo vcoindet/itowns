@@ -2,7 +2,8 @@
 // # Loading gpx file
 
 // Define initial camera position
-var positionOnGlobe = { longitude: 2.334242, latitude: 48.850167, altitude: 100 };
+// 2.391864678818233, 48.889957901766138, 55.32325
+var positionOnGlobe = { longitude: 2.391864678818233, latitude: 48.889957901766138, altitude: 80 };
 
 // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
 var viewerDiv = document.getElementById('viewerDiv');
@@ -27,17 +28,30 @@ promises.push(itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').th
 exports.view = globeView;
 
 globeView.addLayer({
+    type: 'geometry',
     update: itowns.OrientedImageProcessing.update(),
     // update: itowns.FeatureProcessing.update(),
-    url: 'http://localhost:8080/examples/layers/panoramicsMetaData3D-4326.geojson',
+    url: 'http://localhost:8080/LaVillette/1705160721-00-4326.geojson',
+    calibration: 'http://localhost:8080/LaVillette/cameraMetaData.json',
     protocol: 'orientedimage',
     // version: '2.0.0',
     id: 'demo_orientedImage',
     // typeName: 'tcl_sytral.tcllignebus',
-    level: 2,
+    level: 16,
     projection: 'EPSG:4326',
+    view: globeView,
     crsOut: globeView.referenceCrs,
     options: {
         mimetype: 'geojson',
     },
 }, globeView.tileLayer);
+
+
+function onKeyPress(evt) {
+    console.log('evt : ', evt.keyCode);
+    // if (evt.keyCode == 32) {
+    // }
+}
+
+viewerDiv.focus();
+viewerDiv.addEventListener('keyup', onKeyPress);
