@@ -31,6 +31,7 @@ const CONTROL_STATE = {
     TOUCH_PAN: 5,
     MOVE_GLOBE: 6,
     PANORAMIC: 7,
+    SELECT: 8,
 };
 
 // The control's keys
@@ -100,7 +101,6 @@ var presiceSlerp = function presiceSlerp(qb, t) {
 };
 
 // private members
-var space = false;
 const EPS = 0.000001;
 
 // Orbit
@@ -212,11 +212,6 @@ const sizeRendering = new THREE.Vector2();
 // Tangent sphere to ellipsoid
 const tSphere = new Sphere();
 tSphere.picking = { position: new THREE.Vector3(), normal: new THREE.Vector3() };
-
-// Special key
-var keyCtrl = false;
-var keyShift = false;
-var keyS = false;
 
 // Set to true to enable target helper
 const enableTargetHelper = false;
@@ -376,7 +371,6 @@ function GlobeControls(view, target, radius, options = {}) {
 
     // This option actually enables dollying in and out; left as "zoom" for
     // backwards compatibility
-    this.enableZoom = true;
     this.zoomSpeed = options.zoomSpeed || 2.0;
 
     // Limits to how far you can dolly in and out ( PerspectiveCamera only )
@@ -388,11 +382,9 @@ function GlobeControls(view, target, radius, options = {}) {
     this.maxZoom = Infinity;
 
     // Set to true to disable this control
-    this.enableRotate = true;
     this.rotateSpeed = options.rotateSpeed || 0.25;
 
     // Set to true to disable this control
-    this.enablePan = true;
     this.keyPanSpeed = 7.0; // pixels moved per arrow key push
 
     // Set to true to automatically rotate around the target
@@ -426,9 +418,9 @@ function GlobeControls(view, target, radius, options = {}) {
 
     // Mouse buttons
     this.mouseButtons = {
-        PANORAMIC: THREE.MOUSE.LEFT,
-        ZOOM: THREE.MOUSE.MIDDLE,
-        PAN: THREE.MOUSE.RIGHT,
+        LEFTCLICK: THREE.MOUSE.LEFT,
+        MIDDLECLICK: THREE.MOUSE.MIDDLE,
+        RIGHTCLICK: THREE.MOUSE.RIGHT,
     };
 
     // Radius tangent sphere
@@ -679,10 +671,6 @@ function GlobeControls(view, target, radius, options = {}) {
         }
     }.bind(this);
 
-    this.getSpace = function getSpace() {
-        return space;
-    };
-
     this.getSphericalDelta = function getSphericalDelta() {
         return sphericalDelta;
     };
@@ -844,27 +832,19 @@ function GlobeControls(view, target, radius, options = {}) {
             event.preventDefault();
 
             if (state === CONTROL_STATE.ORBIT || state === CONTROL_STATE.PANORAMIC) {
-                if (this.enableRotate === false) return;
+                if (state === CONTROL_STATE.ORBIT && !this.configurationUi.ORBIT.enable) return;
+                if (state === CONTROL_STATE.PANORAMIC && !this.configurationUi.PANORAMIC.enable) return;
 
                 rotateEnd.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
                 rotateDelta.subVectors(rotateEnd, rotateStart);
 
-                // rotating across whole screen goes 360 degrees around
-                if (!space) {
-                    this.rotateLeft(2 * Math.PI * rotateDelta.x / sizeRendering.width * this.rotateSpeed);
-
-                    // rotating up and down along whole screen attempts to go 360, but limited to 180
-                    this.rotateUp(2 * Math.PI * rotateDelta.y / sizeRendering.height * this.rotateSpeed);
-                } else {
-                    this.rotateLeft(rotateDelta.x);
-
-                    // rotating up and down along whole screen attempts to go 360, but limited to 180
-                    this.rotateUp(rotateDelta.y);
-                }
+                this.rotateLeft(2 * Math.PI * rotateDelta.x / sizeRendering.width * this.rotateSpeed);
+                // rotating up and down along whole screen attempts to go 360, but limited to 180
+                this.rotateUp(2 * Math.PI * rotateDelta.y / sizeRendering.height * this.rotateSpeed);
 
                 rotateStart.copy(rotateEnd);
             } else if (state === CONTROL_STATE.DOLLY) {
-                if (this.enableZoom === false) return;
+                if (this.configurationUi.DOLLY.enable === false) return;
 
                 dollyEnd.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
                 dollyDelta.subVectors(dollyEnd, dollyStart);
@@ -877,7 +857,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
                 dollyStart.copy(dollyEnd);
             } else if (state === CONTROL_STATE.PAN) {
-                if (this.enablePan === false) return;
+                if (this.configurationUi.PAN.enable === false) return;
 
                 panEnd.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
                 panDelta.subVectors(panEnd, panStart);
@@ -886,6 +866,8 @@ function GlobeControls(view, target, radius, options = {}) {
 
                 panStart.copy(panEnd);
             } else if (state === CONTROL_STATE.MOVE_GLOBE) {
+                if (this.configurationUi.MOVE_GLOBE.enable === false) return;
+
                 mouse.x = ((event.clientX - event.target.offsetLeft) / sizeRendering.width) * 2 - 1;
                 mouse.y = -((event.clientY - event.target.offsetTop) / sizeRendering.height) * 2 + 1;
 
@@ -915,22 +897,61 @@ function GlobeControls(view, target, radius, options = {}) {
         };
     }());
 
+    this.configurationUi = {
+        MOVE_GLOBE: {
+            mouseButton: this.mouseButtons.LEFTCLICK,
+            enable: true,
+        },
+        PANORAMIC: {
+            mouseButton: this.mouseButtons.LEFTCLICK,
+            keyboard: CONTROL_KEYS.SHIFT,
+            enable: true,
+        },
+        ORBIT: {
+            mouseButton: this.mouseButtons.LEFTCLICK,
+            keyboard: CONTROL_KEYS.CTRL,
+            enable: true,
+        },
+        SELECT: {
+            mouseButton: this.mouseButtons.LEFTCLICK,
+            keyboard: CONTROL_KEYS.S,
+            enable: true,
+        },
+        DOLLY: {
+            mouseButton: this.mouseButtons.MIDDLECLICK,
+            enable: true,
+        },
+        PAN: {
+            mouseButton: this.mouseButtons.RIGHTCLICK,
+            enable: true,
+        },
+    };
+
+    const UiToState = (mouseButton, keyboard) => {
+        for (const key of Object.keys(this.configurationUi)) {
+            const value = this.configurationUi[key];
+            if (value.enable && value.mouseButton === mouseButton && value.keyboard === keyboard) {
+                return CONTROL_STATE[key];
+            }
+        }
+        return CONTROL_STATE.NONE;
+    };
+
     var onMouseDown = function onMouseDown(event) {
         player.stop().then(() => {
             if (this.enabled === false) return;
             event.preventDefault();
-
-            if (event.button === this.mouseButtons.PANORAMIC) {
-                if (this.enableRotate === false) return;
-
-                if (keyCtrl) {
-                    state = CONTROL_STATE.ORBIT;
-                } else if (keyShift) {
-                    state = CONTROL_STATE.PANORAMIC;
-                } else if (keyS) {
+            state = UiToState(event.button, currentKey, this.configurationUi);
+            switch (state) {
+                case CONTROL_STATE.ORBIT:
+                case CONTROL_STATE.PANORAMIC:
+                    rotateStart.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
+                    break;
+                case CONTROL_STATE.SELECT:
                     // If the key 'S' is down, the engine selects node under mouse
                     this._view.selectNodeAt(new THREE.Vector2(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop));
-                } else {
+                    break;
+                case CONTROL_STATE.MOVE_GLOBE: {
                     snapShotCamera.shot(this.camera);
                     ptScreenClick.x = event.clientX - event.target.offsetLeft;
                     ptScreenClick.y = event.clientY - event.target.offsetTop;
@@ -941,26 +962,20 @@ function GlobeControls(view, target, radius, options = {}) {
                     if (point) {
                         ctrl.range = this.getRange();
                         updateSpherePicking.bind(this)(point, ptScreenClick);
-                        state = CONTROL_STATE.MOVE_GLOBE;
+                    } else {
+                        state = CONTROL_STATE.NONE;
                     }
+                    break;
                 }
-
-                rotateStart.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
-            } else if (event.button === this.mouseButtons.ZOOM) {
-                if (this.enableZoom === false) return;
-
-                state = CONTROL_STATE.DOLLY;
-
-                dollyStart.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
-            } else if (event.button === this.mouseButtons.PAN) {
-                if (this.enablePan === false) return;
-
-                state = CONTROL_STATE.PAN;
-
-                panStart.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
+                case CONTROL_STATE.DOLLY:
+                    dollyStart.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
+                    break;
+                case CONTROL_STATE.PAN:
+                    panStart.set(event.clientX - event.target.offsetLeft, event.clientY - event.target.offsetTop);
+                    break;
+                default:
             }
-
-            if (state !== CONTROL_STATE.NONE) {
+            if (state != CONTROL_STATE.NONE) {
                 this.domElement.addEventListener('mousemove', _handlerMouseMove, false);
                 this.domElement.addEventListener('mouseup', _handlerMouseUp, false);
                 this.domElement.addEventListener('mouseleave', _handlerMouseUp, false);
@@ -973,7 +988,7 @@ function GlobeControls(view, target, radius, options = {}) {
         if (this.enabled === false) return;
 
         // Double click throws move camera's target with animation
-        if (!keyCtrl && !keyShift) {
+        if (!currentKey) {
             ptScreenClick.x = event.clientX - event.target.offsetLeft;
             ptScreenClick.y = event.clientY - event.target.offsetTop;
 
@@ -1016,7 +1031,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
     var onMouseWheel = function onMouseWheel(event) {
         player.stop().then(() => {
-            if (this.enabled === false || this.enableZoom === false) return;
+            if (!this.enabled || !this.configurationUi.DOLLY.enable) return;
 
             event.preventDefault();
             event.stopPropagation();
@@ -1059,25 +1074,22 @@ function GlobeControls(view, target, radius, options = {}) {
     };
 
     var onKeyUp = function onKeyUp() {
-        if (this.enabled === false || this.enableKeys === false || this.enablePan === false) return;
+        if (this.enabled === false || this.enableKeys === false || this.configurationUi.PAN.enable === false) return;
 
 
         if (state === CONTROL_STATE.PAN)
         {
             updateCameraTargetOnGlobe.bind(this)();
         }
-
-        keyCtrl = false;
-        keyShift = false;
-        keyS = false;
+        currentKey = undefined;
     };
+
+    let currentKey;
 
     var onKeyDown = function onKeyDown(event) {
         player.stop().then(() => {
-            if (this.enabled === false || this.enableKeys === false || this.enablePan === false) return;
-            keyCtrl = false;
-            keyShift = false;
-
+            if (this.enabled === false || this.enableKeys === false || this.configurationUi.PAN.enable === false) return;
+            currentKey = event.keyCode;
             switch (event.keyCode) {
                 case CONTROL_KEYS.UP:
                     this.mouseToPan(0, this.keyPanSpeed);
@@ -1099,24 +1111,6 @@ function GlobeControls(view, target, radius, options = {}) {
                     state = CONTROL_STATE.PAN;
                     update();
                     break;
-                // TODO Why space key, looking for movement
-                case CONTROL_KEYS.SPACE:
-                    space = !space;
-                    // this.updateTarget();
-                    update();
-                    break;
-                case CONTROL_KEYS.CTRL:
-                    // computeVectorUp();
-                    keyCtrl = true;
-                    break;
-                case CONTROL_KEYS.SHIFT:
-                    // computeVectorUp();
-                    keyShift = true;
-                    break;
-                case CONTROL_KEYS.S:
-                    // WARNING loop !!!
-                    keyS = true;
-                    break;
                 default:
             }
         });
@@ -1129,7 +1123,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
             case 1: // one-fingered touch: rotate
 
-                if (this.enableRotate === false) return;
+                if (!this.configurationUi.ORBIT.enable) return;
 
                 state = CONTROL_STATE.TOUCH_ROTATE;
 
@@ -1138,7 +1132,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
             case 2: // two-fingered touch: dolly
 
-                if (this.enableZoom === false) return;
+                if (!this.configurationUi.DOLLY.enable) return;
 
                 state = CONTROL_STATE.TOUCH_DOLLY;
 
@@ -1150,7 +1144,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
             case 3: // three-fingered touch: this.mouseToPan
 
-                if (this.enablePan === false) return;
+                if (this.configurationUi.PAN.enable === false) return;
 
                 state = CONTROL_STATE.TOUCH_PAN;
 
@@ -1178,7 +1172,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
             case 1: // one-fingered touch: rotate
 
-                if (this.enableRotate === false) return;
+                if (!this.configurationUi.ORBIT.enable) return;
                 if (state !== CONTROL_STATE.TOUCH_ROTATE) return;
 
                 rotateEnd.set(event.touches[0].pageX, event.touches[0].pageY);
@@ -1196,7 +1190,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
             case 2: // two-fingered touch: dolly
 
-                if (this.enableZoom === false) return;
+                if (!this.configurationUi.DOLLY.enable) return;
                 if (state !== CONTROL_STATE.TOUCH_DOLLY) return;
 
                 var dx = event.touches[0].pageX - event.touches[1].pageX;
@@ -1219,7 +1213,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
             case 3: // three-fingered touch: this.mouseToPan
 
-                if (this.enablePan === false) return;
+                if (this.configurationUi.PAN.enable === false) return;
                 if (state !== CONTROL_STATE.TOUCH_PAN) return;
 
                 panEnd.set(event.touches[0].pageX, event.touches[0].pageY);
@@ -1244,9 +1238,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
         this.dispatchEvent(this.endEvent);
         state = CONTROL_STATE.NONE;
-        keyCtrl = false;
-        keyShift = false;
-        keyS = false;
+        currentKey = undefined;
     };
 
     // Callback launched when player is stopped
