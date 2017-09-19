@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import Coordinates, { crsToUnit, crsIsGeographic, assertCrsIsValid, convertValueToUnit, reasonnableEpsilonForUnit } from '../Geographic/Coordinates';
+import Projection from '../Geographic/Projection';
 
+const projection = new Projection();
 /**
  * Extent is a SIG-area (so 2D)
  * It can use explicit coordinates (e.g: lon/lat) or implicit (WMTS coordinates)
@@ -90,7 +92,37 @@ Extent.prototype.as = function as(crs) {
     assertCrsIsValid(crs);
 
     if (_isTiledCRS(this._crs)) {
-        throw new Error('Unsupported yet');
+        if (crs === 'EPSG:3857') {
+            const nbCol = Math.pow(2, this.zoom);
+            const size = 360 / nbCol;
+            const west = 180 - size * (nbCol - this.col);
+            const east = 180 - size * (nbCol - (this.col + 1));
+            const nbRow = Math.pow(2, this.zoom);
+            const sizeRow = 1.0 / nbRow;
+            const Yn = 1 - sizeRow * (nbRow - (this.row));
+            const Ys = 1 - sizeRow * (nbRow - (this.row + 1));
+            const north = projection.YToWGS84(Yn) * 180 / Math.PI;
+            const south = projection.YToWGS84(Ys) * 180 / Math.PI;
+            const minCoord = new Coordinates('EPSG:4326', west, south).as(crs);
+            const maxCoord = new Coordinates('EPSG:4326', east, north).as(crs);
+            return new Extent(crs, {
+                west: minCoord.x(),
+                east: maxCoord.x(),
+                south: minCoord.y(),
+                north: maxCoord.y(),
+            });
+        } else if (crs === 'EPSG:4326') {
+            const nbRow = Math.pow(2, this.zoom);
+            const size = 180 / nbRow;
+            const north = size * (nbRow - this.row) - 90;
+            const south = size * (nbRow - (this.row + 1)) - 90;
+            const west = 180 - size * (2 * nbRow - this.col);
+            const east = 180 - size * (2 * nbRow - (this.col + 1));
+
+            return new Extent(crs, { west, east, south, north });
+        } else {
+            throw new Error('Unsupported yet');
+        }
     }
 
     if (this._crs != crs) {

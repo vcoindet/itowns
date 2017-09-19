@@ -192,7 +192,7 @@ TileMesh.prototype.changeSequenceLayers = function changeSequenceLayers(sequence
 };
 
 TileMesh.prototype.getCoordsForLayer = function getCoordsForLayer(layer) {
-    if (layer.protocol.indexOf('wmts') == 0) {
+    if (layer.protocol.indexOf('wmts') == 0 || layer.protocol.indexOf('wms') == 0) {
         OGCWebServiceHelper.computeTileMatrixSetCoordinates(this, layer.options.tileMatrixSet);
         return this.wmtsCoords[layer.options.tileMatrixSet];
     } else if (layer.protocol == 'tms') {
