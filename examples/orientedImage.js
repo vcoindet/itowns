@@ -47,11 +47,11 @@ globeView.addLayer({
 }, globeView.tileLayer);
 
 
-function onKeyPress(evt) {
-    console.log('evt : ', evt.keyCode);
-    // if (evt.keyCode == 32) {
-    // }
-}
+// function onKeyPress(evt) {
+//     console.log('evt : ', evt.keyCode);
+//     // if (evt.keyCode == 32) {
+//     // }
+// }
 
-viewerDiv.focus();
-viewerDiv.addEventListener('keyup', onKeyPress);
+// viewerDiv.focus();
+// viewerDiv.addEventListener('keyup', onKeyPress);
