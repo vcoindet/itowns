@@ -85,7 +85,7 @@ function updateMatrixMaterial(oiInfo, layer, camera) {
         rot = new THREE.Matrix4().multiplyMatrices(rot, camera.matrixWorld);
         layer.shaderMat.uniforms.mvpp.value[i] = rot.clone();
     }
-    if (layer.view) layer.view.notifyChange(true);
+    // if (layer.view) layer.view.notifyChange(true);
 }
 
 function updateMaterial(textures, oiInfo, layer, camera) {
