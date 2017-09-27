@@ -200,7 +200,7 @@ function minimalTextureProjectiveFS(NbImages, withDistort) {
         '   int blend = 0;',
         mainLoop.join('\n'),
         '   if (color.a > 0.0) color = color / color.a;',
-        '   color.a = 0.75;',
+        '   color.a = 1.;',
         '   gl_FragColor = color;',
         '} ',
     ].join('\n');
@@ -350,7 +350,7 @@ OrientedImage_Provider.prototype.updateMaterial = function updateMaterial(camera
     // if necessary create the sphere
     if (!layer.sphere) {
         // On cree une sphere et on l'ajoute a la scene
-        var geometry = new THREE.SphereGeometry(2, 32, 32);
+        var geometry = new THREE.SphereGeometry(1, 32, 32);
         // var material = layer.shaderMat;
         var material = new THREE.MeshPhongMaterial({ color: 0x7777ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5, wireframe: true });
         layer.sphere = new THREE.Mesh(geometry, material);
