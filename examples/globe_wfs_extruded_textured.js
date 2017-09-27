@@ -10,7 +10,7 @@ var promises = [];
 var viewerDiv = document.getElementById('viewerDiv');
 
 // Instanciate iTowns GlobeView*
-var globeView = new itowns.GlobeView(viewerDiv, positionOnGlobe, { renderer: renderer });
+var globeView = new itowns.GlobeView(viewerDiv, positionOnGlobe, { renderer: renderer, handleCollision: false });
 function addLayerCb(layer) {
     return globeView.addLayer(layer);
 }
@@ -96,7 +96,8 @@ globeView.addLayer({
     type: 'geometry',
     update: itowns.OrientedImageProcessing.update(),
     // update: itowns.FeatureProcessing.update(),
-    url: 'http://localhost:8080/LaVillette/1705160721-00-4326.geojson',
+    // url: 'http://localhost:8080/LaVillette/1705160721-00-4326.geojson',
+    url: 'http://localhost:8080/LaVillette/demo-4326.geojson',
     calibration: 'http://localhost:8080/LaVillette/cameraMetaData.json',
     protocol: 'orientedimage',
     // version: '2.0.0',
@@ -122,12 +123,12 @@ globeView.addLayer({
         typeName: 'BDTOPO_BDD_WLD_WGS84G:bati_remarquable,BDTOPO_BDD_WLD_WGS84G:bati_indifferencie,BDTOPO_BDD_WLD_WGS84G:bati_industriel',
         level: 14,
         projection: 'EPSG:4326',
-        // extent: {
-        //     west: 4,
-        //     east: 6,
-        //     south: 44,
-        //     north: 47,
-        // },
+        extent: {
+            west: 2.388,
+            east: 2.394,
+            south: 48.887,
+            north: 48.890,
+        },
         style: {
             altitude: function altitude(properties) { return properties.z_min - properties.hauteur; },
             extrude: function extrude(properties) { return properties.hauteur; },
@@ -140,8 +141,6 @@ globeView.addLayer({
 }, globeView.tileLayer);
 
 });
-
-
 
 exports.view = globeView;
 exports.initialPosition = positionOnGlobe;

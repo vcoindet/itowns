@@ -37,6 +37,9 @@
     </head>
     <body>
         <div id="viewerDiv"></div>
+        <!--script type="text/javascript">
+            viewerDiv.addEventListener('keydown', function (evt) { console.log(evt); });
+        </script-->
         <script src="GUI/GuiTools.js"></script>
         <script src="../dist/itowns.js"></script>
         <script src="../dist/debug.js"></script>
@@ -62,8 +65,6 @@
             });
             const d = new debug.Debug(globeView, menuGlobe.gui);
             debug.createTileDebugUI(menuGlobe.gui, globeView, globeView.wgs84TileLayer, d);
-
-
         </script>
     </body>
 </html>
