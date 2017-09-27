@@ -57,7 +57,7 @@
                     menuGlobe.addImageryLayersGUI(globeView.getLayers(function (l) { return l.type === 'color'; }));
                     menuGlobe.addElevationLayersGUI(globeView.getLayers(function (l) { return l.type === 'elevation'; }));
 
-                    globeView.controls.setTilt(75, true);
+                    // globeView.controls.setTilt(75, true);
                 });
             });
             const d = new debug.Debug(globeView, menuGlobe.gui);

@@ -174,7 +174,12 @@ function coordinatesToMesh(coordinates, properties, style = {}) {
             }
             geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
             geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
-            result = new THREE.Mesh(geometry);
+            // console.log(style.textureLayer);
+            // debugger;
+            var material = style.textureLayer;
+            // var material = new THREE.MeshPhongMaterial({ color: 0xff0000, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+            result = new THREE.Mesh(geometry, material);
+            // result = new THREE.Mesh(geometry);
 
             // store 'isExtrude' in the mesh. Will be used in FeatureProcessing for colorisation.
             result.isExtruded = style.extrude;

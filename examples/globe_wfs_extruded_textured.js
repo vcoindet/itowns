@@ -91,32 +91,7 @@ function colorFunctionBuildings(layer, node, featureCollection) {
     itowns.FeatureProcessing.assignColorsToFeatureCollection(
         featureCollection, featureCollection.children[0], colors);
 }
-globeView.addLayer({
-    type: 'geometry',
-    update: itowns.FeatureProcessing.update(colorFunctionBuildings),
-    url: 'http://wxs.ign.fr/72hpsel8j8nhb5qgdh07gcyp/geoportail/wfs?',
-    protocol: 'wfs',
-    version: '2.0.0',
-    id: 'wfsBuilding',
-    typeName: 'BDTOPO_BDD_WLD_WGS84G:bati_remarquable,BDTOPO_BDD_WLD_WGS84G:bati_indifferencie,BDTOPO_BDD_WLD_WGS84G:bati_industriel',
-    level: 14,
-    projection: 'EPSG:4326',
-    // extent: {
-    //     west: 4,
-    //     east: 6,
-    //     south: 44,
-    //     north: 47,
-    // },
-    style: {
-        altitude: function altitude(properties) { return properties.z_min - properties.hauteur; },
-        extrude: function extrude(properties) { return properties.hauteur; },
-    },
-    ipr: 'IGN',
-    options: {
-        mimetype: 'json',
-    },
-}, globeView.tileLayer);
-
+var textureLayer;
 globeView.addLayer({
     type: 'geometry',
     update: itowns.OrientedImageProcessing.update(),
@@ -134,7 +109,38 @@ globeView.addLayer({
     options: {
         mimetype: 'geojson',
     },
+}, globeView.tileLayer).then(result => {
+    console.log(result.shaderMat);
+    globeView.addLayer({
+        type: 'geometry',
+        update: itowns.FeatureProcessing.update(),
+        // update: itowns.FeatureProcessing.update(colorFunctionBuildings),
+        url: 'http://wxs.ign.fr/72hpsel8j8nhb5qgdh07gcyp/geoportail/wfs?',
+        protocol: 'wfs',
+        version: '2.0.0',
+        id: 'wfsBuilding',
+        typeName: 'BDTOPO_BDD_WLD_WGS84G:bati_remarquable,BDTOPO_BDD_WLD_WGS84G:bati_indifferencie,BDTOPO_BDD_WLD_WGS84G:bati_industriel',
+        level: 14,
+        projection: 'EPSG:4326',
+        // extent: {
+        //     west: 4,
+        //     east: 6,
+        //     south: 44,
+        //     north: 47,
+        // },
+        style: {
+            altitude: function altitude(properties) { return properties.z_min - properties.hauteur; },
+            extrude: function extrude(properties) { return properties.hauteur; },
+            textureLayer: result.shaderMat,
+        },
+        ipr: 'IGN',
+        options: {
+            mimetype: 'json',
+    },
 }, globeView.tileLayer);
+
+});
+
 
 
 exports.view = globeView;
