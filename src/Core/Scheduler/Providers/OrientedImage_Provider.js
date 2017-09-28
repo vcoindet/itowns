@@ -356,6 +356,7 @@ OrientedImage_Provider.prototype.updateMaterial = function updateMaterial(camera
         layer.sphere = new THREE.Mesh(geometry, material);
         layer.sphere.visible = true;
         layer.sphere.layer = layer.id;
+        layer.sphere.name = 'immersiveSphere';
         scene.add(layer.sphere);
     }
 
