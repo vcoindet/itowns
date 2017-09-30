@@ -2,7 +2,8 @@
 // # Simple Globe viewer
 
 // Define initial camera position
-var positionOnGlobe = { longitude: 2.391864678818233, latitude: 48.889957901766138, altitude: 80 };
+var positionOnGlobe = { longitude: 2.33481381638492, latitude: 48.850602961052147, altitude: 50};
+// var positionOnGlobe = { longitude: 2.391864678818233, latitude: 48.889957901766138, altitude: 80 };
 // var positionOnGlobe = { longitude: 4.818, latitude: 45.7354, altitude: 3000 };
 var promises = [];
 
@@ -95,10 +96,12 @@ var textureLayer;
 globeView.addLayer({
     type: 'geometry',
     update: itowns.OrientedImageProcessing.update(),
-    // update: itowns.FeatureProcessing.update(),
-    // url: 'http://localhost:8080/LaVillette/1705160721-00-4326.geojson',
-    url: 'http://localhost:8080/LaVillette/demo-4326.geojson',
-    calibration: 'http://localhost:8080/LaVillette/cameraMetaData.json',
+    images: 'http://www.itowns-project.org/itowns-sample-data/images/140616/Paris-140616_0740-{sensorId}-00001_0000{imageId}.jpg',
+    orientations: 'http://localhost:8080/examples/panoramicsMetaData-4326.geojson',
+    calibrations: 'http://localhost:8080/examples/cameraCalibration.json',
+    // images: 'http://localhost:8080/LaVillette/images_512/{imageId}_{sensorId}.jpg',
+    // orientations: 'http://localhost:8080/LaVillette/demo-4326.geojson',
+    // calibrations: 'http://localhost:8080/LaVillette/cameraMetaData.json',
     protocol: 'orientedimage',
     // version: '2.0.0',
     id: 'demo_orientedImage',
@@ -111,7 +114,7 @@ globeView.addLayer({
         mimetype: 'geojson',
     },
 }, globeView.tileLayer).then(result => {
-    console.log(result.shaderMat);
+    // console.log(result.shaderMat);
     globeView.addLayer({
         type: 'geometry',
         update: itowns.FeatureProcessing.update(),
@@ -124,10 +127,10 @@ globeView.addLayer({
         level: 14,
         projection: 'EPSG:4326',
         extent: {
-            west: 2.388,
-            east: 2.394,
-            south: 48.887,
-            north: 48.890,
+            west: 2.334,
+            east: 2.335,
+            south: 48.849,
+            north: 48.851,
         },
         style: {
             altitude: function altitude(properties) { return properties.z_min - properties.hauteur; },

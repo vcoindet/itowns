@@ -4,6 +4,7 @@
  * Description: Provides Oriented Image data for immersive navigation
  */
 import * as THREE from 'three';
+import format from 'string-format';
 import Extent from '../../Geographic/Extent';
 // import Coordinates from '../../Geographic/Coordinates';
 import Provider from './Provider';
@@ -32,21 +33,17 @@ OrientedImage_Provider.prototype.preprocessDataLayer = function preprocessDataLa
     }
     var promises = [];
 
-    promises.push(Fetcher.json(layer.calibration, layer.networkOptions));
-    promises.push(Fetcher.json(layer.url, layer.networkOptions));
+    promises.push(Fetcher.json(layer.calibrations, layer.networkOptions));
+    promises.push(Fetcher.json(layer.orientations, layer.networkOptions));
     // todo: charger un tableau de panoInfo plutot que d'utiliser le GeoJSON2Feature
     return Promise.all(promises).then((res) => { layer.feature = GeoJSON2Feature.parse(layer.crsOut, res[1]); sensorsInit(res, layer); });
 };
 
 function loadOrientedImageData(oiInfo, layer, camera) {
     var promises = [];
-    // todo: ajouter l'url de images dans les info du layer
-    // todo: mettre a jour le fichier des mtd de pano pour corriger la syntaxe de l'url
-    // var url = `http://www.itowns-project.org/itowns-sample-data/images/140616/${oiInfo.filename}.jpg`;
-    var url = `http://localhost:8080/LaVillette/images_512/${oiInfo.id}_00.jpg`;
     for (const sensor of layer.sensors) {
-        var url2 = url.replace('_00.', `_${sensor.id}.`);
-        promises.push(Fetcher.texture(url2, layer.networkOptions));
+        var url = format(layer.images, { imageId: oiInfo.id, sensorId: sensor.id });
+        promises.push(Fetcher.texture(url, layer.networkOptions));
     }
     return Promise.all(promises).then((res) => { updateMaterial(res, oiInfo, layer, camera); });
 }
@@ -72,8 +69,10 @@ function updateMatrixMaterial(oiInfo, layer, camera) {
         // // with sbet export for iTowns v1
         const euler = new THREE.Euler(
             oiInfo.pitch * Math.PI / 180,
-            -oiInfo.roll * Math.PI / 180,
-            -(oiInfo.heading * Math.PI / 180 - Math.PI * 0.5), 'ZXY');
+            oiInfo.roll * Math.PI / 180,
+            oiInfo.heading * Math.PI / 180 + Math.PI, 'ZXY');
+            // -(oiInfo.heading * Math.PI / 180 - Math.PI * 0.5), 'ZXY');
+
         const cap = new THREE.Quaternion().setFromEuler(euler);
         quaternion.multiply(cap);
         var rot = new THREE.Matrix4().makeRotationFromQuaternion(quaternion);
@@ -206,113 +205,29 @@ function minimalTextureProjectiveFS(NbImages, withDistort) {
     ].join('\n');
 }
 
-// http://fr.wikipedia.org/wiki/Methode_de_Cardan  Thanks Bredif
-// function cardan_cubic_roots(a, b, c, d) {
-//     if (a === 0) return quadratic_roots(b, c, d);
-//     var vt = -b / (3 * a);
-//     var a2 = a * a;
-//     var b2 = b * b;
-//     var a3 = a * a2;
-//     var b3 = b * b2;
-//     var p = c / a - b2 / (3 * a2);
-//     var q = b3 / (a3 * 13.5) + d / a - b * c / (3 * a2);
-//     if (p === 0) {
-//         var x = cubic_root(-q) + vt;
-//         return [x, x, x];
-//     }
-//     var p3_4_27 = p * p * p * 4 / 27;
-//     var del = q * q + p3_4_27;
-//     if (del > 0) {
-//         var sqrt_del = Math.sqrt(del);
-//         var u = cubic_root((-q + sqrt_del) / 2);
-//         var v = cubic_root((-q - sqrt_del) / 2);
-//         return [u + v + vt];
-//     }
-//     else if (del === 0) {
-//         var z0 = 3 * q / p;
-//         var x0 = vt + z0;
-//         var x12 = vt - z0 * 0.5;
-//         return [x0, x12, x12];
-//     }
-//     else {
-//         var kos = Math.acos(-q / Math.sqrt(p3_4_27));
-//         var r = 2 * Math.sqrt(-p / 3);
-//         return [r * Math.cos(kos / 3) + vt, r * Math.cos((kos + Math.PI) / 3) + vt, r * Math.cos((kos + 2 * Math.PI) / 3) + vt];
-//     }
-// }
-
-// function quadratic_roots(a, b, c) {
-//     var delta = b * b - 4 * a * c;
-//     if (delta < 0) return [];
-//     var x0 = -b / (2 * a);
-//     if (delta === 0) return [x0];
-//     var sqr_delta_2a = Math.sqrt(delta) / (2 * a);
-//     return [x0 - sqr_delta_2a, x0 + sqr_delta_2a];
-// }
-
-// function sgn(x) {
-//     return (x > 0) - (x < 0);
-// }
-
-// function cubic_root(x) {
-//     return sgn(x) * Math.pow(Math.abs(x), 1 / 3);
-// }
-
-// function getDistortion_r2max(disto) {
-//     // returned the square of the smallest positive root of the derivativeof the distortion polynomial
-//     // which tells where the distortion might no longer be bijective.
-//     var roots = cardan_cubic_roots(7 * disto.z, 5 * disto.y, 3 * disto.x, 1);
-//     var imax = -1;
-//     for (var i in roots) {
-//         if (roots[i] > 0 && (imax === -1 || roots[imax] > roots[i])) imax = i;
-//         if (imax === -1) return Infinity; // no roots : all is valid !
-//     }
-//     return roots[imax];
-// }
-
 function sensorsInit(res, layer) {
-    // var itownsWay = new THREE.Matrix3().set(0, -1, 0, 0, 0, -1, 1, 0, 0);
-    // var photogram_JMM = new THREE.Matrix3().set(0, 0, -1, -1, 0, 0, 0, 1, 0);
-    // var photgram_image = new THREE.Matrix3().set(1, 0, 0, 0, -1, 0, 0, 0, -1);
-    // var ori0 = new THREE.Matrix3().set(0, -1, 0, 1, 0, 0, 0, 0, 1);
-    // var ori1 = new THREE.Matrix3().set(0, 1, 0, -1, 0, 0, 0, 0, 1);
-    // var ori2 = new THREE.Matrix3().set(-1, 0, 0, 0, -1, 0, 0, 0, 1);
-    // var ori3 = new THREE.Matrix3().set(1, 0, 0, 0, 1, 0, 0, 0, 1);
-    // console.log(layer.feature.features);
-    // console.log(layer.feature.geometries[0].coordinates);
     let i;
     for (i = 0; i < layer.feature.geometries[0].coordinates.length; ++i) {
         layer.feature.features[i].properties.properties.translation = layer.feature.geometries[0].coordinates[i];
     }
 
+    var withDistort = false;
     for (const s of res[0]) {
         var sensor = {};
         sensor.id = s.id;
         var rotation = new THREE.Matrix3().fromArray(s.rotation);
-        // var orientationCapteur = null;
-        // switch (s.orientation) {
-        //     case 0: orientationCapteur = ori0; break;
-        //     case 1: orientationCapteur = ori1; break;
-        //     case 2: orientationCapteur = ori2; break;
-        //     case 3: orientationCapteur = ori3; break;
-        //     default: orientationCapteur = null;
-        // }
-        // rotation = new THREE.Matrix3().multiplyMatrices(rotation.clone(), photogram_JMM.clone());
-        // rotation = new THREE.Matrix3().multiplyMatrices(rotation.clone(), orientationCapteur.clone());
-        // rotation = new THREE.Matrix3().multiplyMatrices(rotation.clone(), photgram_image.clone());
-        // rotation = new THREE.Matrix3().multiplyMatrices(itownsWay, rotation.clone());
         // sensor.sommet = new THREE.Vector3().fromArray(s.position);
         // sensor.sommet.applyMatrix3(itownsWay);
         sensor.projection = new THREE.Matrix3().fromArray(s.projection);
         sensor.matrix = new THREE.Matrix3().multiplyMatrices(rotation, sensor.projection);
-        // sensor.distortion = null;
-        // sensor.pps = null;
-        // if (s.distortion) {
-        //     sensor.pps = new THREE.Vector2().fromArray(s.distortion.pps);
-        //     var disto = new THREE.Vector3().fromArray(s.distortion.poly357);
-        //     var r2max = getDistortion_r2max(disto);
-        //     sensor.distortion = new THREE.Vector4(disto.x, disto.y, disto.z, r2max);
-        // }
+        sensor.distortion = null;
+        sensor.pps = null;
+        if (s.distortion) {
+            sensor.pps = new THREE.Vector2().fromArray(s.distortion.pps);
+            var disto = new THREE.Vector3().fromArray(s.distortion.poly357);
+            sensor.distortion = new THREE.Vector4(disto.x, disto.y, disto.z, s.distortion.limit * s.distortion.limit);
+            withDistort = true;
+        }
         sensor.size = new THREE.Vector2().fromArray(s.size);
         layer.sensors.push(sensor);
     }
@@ -320,21 +235,26 @@ function sensorsInit(res, layer) {
         size: { type: 'v2v', value: [] },
         mvpp: { type: 'm4v', value: [] },
         texture: { type: 'tv', value: [] },
-        // distortion: { type: 'v4v', value: [] },
-        // pps: { type: 'v2v', value: [] },
     };
+
+    if (withDistort) {
+        U.distortion = { type: 'v4v', value: [] };
+        U.pps = { type: 'v2v', value: [] };
+    }
 
     for (i = 0; i < layer.sensors.length; ++i) {
         U.size.value[i] = layer.sensors[i].size;
         U.mvpp.value[i] = new THREE.Matrix4();
         U.texture.value[i] = new THREE.Texture();
+        U.distortion.value[i] = layer.sensors[i].distortion;
+        U.pps.value[i] = layer.sensors[i].pps;
     }
 
     // create the shader material for Three
     layer.shaderMat = new THREE.ShaderMaterial({
         uniforms: U,
         vertexShader: minimalTextureProjectiveVS(layer.sensors.length),
-        fragmentShader: minimalTextureProjectiveFS(layer.sensors.length),
+        fragmentShader: minimalTextureProjectiveFS(layer.sensors.length, withDistort),
         side: THREE.DoubleSide,
         transparent: true,
         // opacity: 0.5,
