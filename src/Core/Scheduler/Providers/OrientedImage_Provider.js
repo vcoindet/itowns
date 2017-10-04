@@ -48,41 +48,42 @@ function loadOrientedImageData(oiInfo, layer, camera) {
     return Promise.all(promises).then((res) => { updateMaterial(res, oiInfo, layer, camera); });
 }
 
+function getMatrix4FromRotation(Rot) {
+    var M4 = new THREE.Matrix4();
+    M4.elements[0] = Rot.elements[0];
+    M4.elements[1] = Rot.elements[1];
+    M4.elements[2] = Rot.elements[2];
+    M4.elements[4] = Rot.elements[3];
+    M4.elements[5] = Rot.elements[4];
+    M4.elements[6] = Rot.elements[5];
+    M4.elements[8] = Rot.elements[6];
+    M4.elements[9] = Rot.elements[7];
+    M4.elements[10] = Rot.elements[8];
+    return M4;
+}
+
 function updateMatrixMaterial(oiInfo, layer, camera) {
     for (var i = 0; i < layer.shaderMat.uniforms.mvpp.value.length; ++i) {
-        // version avec coord view dans le shader
-        // matrixWorld: The global or world transform of the object
-        // modelViewMatrix: is the object's matrixWorld pre-multiplied by the camera's matrixWorldInverse.
-        // matrixWorldInverse: The view matrix - the inverse of the Camera's matrixWorld.
-        var M = layer.sensors[i].matrix.clone().transpose();
-        var M4 = new THREE.Matrix4();
-        M4.elements[0] = M.elements[0];
-        M4.elements[1] = M.elements[1];
-        M4.elements[2] = M.elements[2];
-        M4.elements[4] = M.elements[3];
-        M4.elements[5] = M.elements[4];
-        M4.elements[6] = M.elements[5];
-        M4.elements[8] = M.elements[6];
-        M4.elements[9] = M.elements[7];
-        M4.elements[10] = M.elements[8];
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(oiInfo.translation._values[0], oiInfo.translation._values[1], oiInfo.translation._values[2]).normalize());
-        // // with sbet export for iTowns v1
+        // compute a Matrix4 for the vertexShader
+        // this Matrix4 convert position in the Camera View system to position on texture
+        // CameraView -(mc2w)-> WorldPosition -(mw2p)-> PanoPosition -(mp2t)-> texture Position
+        var mc2w = camera.matrixWorld;
+        // rotation from geocentric to local vertical system
+        const qGeoCentricToLocal = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(oiInfo.translation._values[0], oiInfo.translation._values[1], oiInfo.translation._values[2]).normalize());
         const euler = new THREE.Euler(
             oiInfo.pitch * Math.PI / 180,
             oiInfo.roll * Math.PI / 180,
             oiInfo.heading * Math.PI / 180 + Math.PI, 'ZXY');
             // -(oiInfo.heading * Math.PI / 180 - Math.PI * 0.5), 'ZXY');
-
-        const cap = new THREE.Quaternion().setFromEuler(euler);
-        quaternion.multiply(cap);
-        var rot = new THREE.Matrix4().makeRotationFromQuaternion(quaternion);
-        var translation = new THREE.Vector4(oiInfo.translation._values[0], oiInfo.translation._values[1], oiInfo.translation._values[2], 0);
-        rot.setPosition(translation);
-        // a ce stade rot est identique a la matrixWorld de la sphere
-        // rot = new THREE.Matrix4().multiplyMatrices(camera.matrixWorld, rot);
-        rot = new THREE.Matrix4().multiplyMatrices(M4, new THREE.Matrix4().getInverse(rot));
-        rot = new THREE.Matrix4().multiplyMatrices(rot, camera.matrixWorld);
-        layer.shaderMat.uniforms.mvpp.value[i] = rot.clone();
+        const qLocalToPano = new THREE.Quaternion().setFromEuler(euler);
+        var centerPanoInWorl = new THREE.Vector4(
+            oiInfo.translation._values[0],
+            oiInfo.translation._values[1], oiInfo.translation._values[2],
+            0);
+        var mp2w = (new THREE.Matrix4().makeRotationFromQuaternion(qGeoCentricToLocal.multiply(qLocalToPano))).setPosition(centerPanoInWorl);
+        var mw2p = new THREE.Matrix4().getInverse(mp2w);
+        var mp2t = layer.sensors[i].mp2t.clone();
+        layer.shaderMat.uniforms.mvpp.value[i] = (mp2t.multiply(mw2p)).multiply(mc2w);
     }
     // if (layer.view) layer.view.notifyChange(true);
 }
@@ -215,11 +216,17 @@ function sensorsInit(res, layer) {
     for (const s of res[0]) {
         var sensor = {};
         sensor.id = s.id;
-        var rotation = new THREE.Matrix3().fromArray(s.rotation);
-        // sensor.sommet = new THREE.Vector3().fromArray(s.position);
-        // sensor.sommet.applyMatrix3(itownsWay);
-        sensor.projection = new THREE.Matrix3().fromArray(s.projection);
-        sensor.matrix = new THREE.Matrix3().multiplyMatrices(rotation, sensor.projection);
+        var rotCamera2Pano = new THREE.Matrix3().fromArray(s.rotation);
+        var centerCameraInPano = new THREE.Vector3().fromArray(s.position);
+        var transPano2Camera = new THREE.Matrix4().makeTranslation(
+            centerCameraInPano.x,
+            centerCameraInPano.y,
+            centerCameraInPano.z);
+        var projection = new THREE.Matrix3().fromArray(s.projection);
+        var rotTexture2Pano = rotCamera2Pano.multiply(projection);
+        var rotPano2Texture = rotTexture2Pano.clone().transpose();
+        sensor.mp2t = getMatrix4FromRotation(rotPano2Texture).multiply(transPano2Camera);
+
         sensor.distortion = null;
         sensor.pps = null;
         if (s.distortion) {
@@ -270,7 +277,7 @@ OrientedImage_Provider.prototype.updateMaterial = function updateMaterial(camera
     // if necessary create the sphere
     if (!layer.sphere) {
         // On cree une sphere et on l'ajoute a la scene
-        var geometry = new THREE.SphereGeometry(1, 32, 32);
+        var geometry = new THREE.SphereGeometry(100, 32, 32);
         // var material = layer.shaderMat;
         var material = new THREE.MeshPhongMaterial({ color: 0x7777ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5, wireframe: true });
         layer.sphere = new THREE.Mesh(geometry, material);
