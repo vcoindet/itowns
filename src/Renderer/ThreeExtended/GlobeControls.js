@@ -42,7 +42,7 @@ const CONTROL_KEYS = {
     SHIFT: 16,
     CTRL: 17,
     S: 83,
-    A:65,
+    A: 65,
 };
 
 // TODO: can be optimize for some uses
@@ -217,7 +217,7 @@ tSphere.picking = { position: new THREE.Vector3(), normal: new THREE.Vector3() }
 var keyCtrl = false;
 var keyShift = false;
 var keyS = false;
-var keyA = false;
+// var keyA = false;
 
 // Set to true to enable target helper
 const enableTargetHelper = false;
@@ -1053,7 +1053,7 @@ function GlobeControls(view, target, radius, options = {}) {
         keyCtrl = false;
         keyShift = false;
         keyS = false;
-        keyA = false;
+        // keyA = false;
     };
 
     var onKeyDown = function onKeyDown(event) {
@@ -1102,11 +1102,12 @@ function GlobeControls(view, target, radius, options = {}) {
                     keyS = true;
                     break;
                 case CONTROL_KEYS.A:
-                    keyA = true;
+                    // keyA = true;
                     var immersiveSphere = view.scene.getObjectByName('immersiveSphere');
                     if (immersiveSphere) {
-                        animatedScale = 0.6;
-                        this.setCameraTargetPosition(immersiveSphere.position.clone(), this.isAnimationEnabled());
+                        this.camera.position.copy(immersiveSphere.position);
+                        // animatedScale = 0.6;
+                        // this.setCameraTargetPosition(immersiveSphere.position.clone(), this.isAnimationEnabled());
                     }
 
                     break;
