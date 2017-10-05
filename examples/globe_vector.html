@@ -29,6 +29,34 @@
                     display: none;
                 }
             }
+            .couponcode:hover .coupontooltip {
+                display: block;
+            }
+            .coupontooltip {
+                display: none;
+                background-image: linear-gradient(rgba(80, 80, 80,0.95), rgba(60, 60, 60,0.95));
+                box-shadow: -1px 2px 5px 1px rgba(0, 0, 0, 0.5);
+                margin-top: 20px;
+                margin-left: 20px;
+                padding: 10px;
+                position: absolute;
+                z-index: 1000;
+                color: #CECECE;
+                font-family: 'Open Sans',
+                sans-serif;
+                font-size: 14px;
+                line-height: 18px;
+                text-align: left;
+            }
+            .couponcode {
+                margin:10px;
+            }
+            .coord {
+                font-size: 12px;
+                padding-left:20px;
+                color: #93B7C0;
+                text-shadow: 0px 1px 0px rgba(200,200,200,.3), 0px -1px 0px rgba(30,30,30,.7);
+            }
         </style>
         <meta charset="UTF-8">
 
@@ -36,7 +64,9 @@
         <script src="GUI/dat.gui/dat.gui.min.js"></script>
     </head>
     <body>
-        <div id="viewerDiv"></div>
+        <div id="viewerDiv" class="couponcode">
+            <span id="tooltip" class="coupontooltip"></span>
+        </div>
         <script src="GUI/GuiTools.js"></script>
         <script src="../dist/itowns.js"></script>
         <script type="text/javascript">
@@ -49,6 +79,19 @@
             var menuGlobe = new GuiTools('menuDiv');
             menuGlobe.view = globeView;
             // Listen for globe full initialisation event
+            var tooltip = document.getElementById("tooltip");
+            tooltip.style.visibility = 'hidden';
+
+            var mouseDown = 0;
+
+            document.body.onmousedown = function onmousedown() {
+                ++mouseDown;
+            };
+            document.body.onmouseup = function onmouseup() {
+                --mouseDown;
+            };
+
+
             globeView.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
                 // eslint-disable-next-line no-console
                 console.info('Globe initialized');
@@ -56,8 +99,81 @@
                     menuGlobe.addImageryLayersGUI(globeView.getLayers(function (l) { return l.type === 'color'; }));
                     menuGlobe.addElevationLayersGUI(globeView.getLayers(function (l) { return l.type === 'elevation'; }));
                     itowns.ColorLayersOrdering.moveLayerToIndex(globeView, 'Ortho', 0);
+                    var layers = globeView.getLayers(function (l) { return l.protocol === 'rasterizer'; });
+
+                    function readPosition(e) {
+                        if (!mouseDown) {
+                            buildToolTip(globeView.controls.pickGeoPosition(e.clientX, e.clientY), e);
+                        } else {
+                            tooltip.style.left = `${e.pageX}px`;
+                            tooltip.style.top = `${e.pageY}px`;
+                        }
+                    }
+
+                    function pickPosition(e) {
+                        buildToolTip(globeView.controls.pickGeoPosition(e.clientX, e.clientY), e);
+                    }
+                    // precision in pixels
+                    var precisionPx = 5;
+                    function buildToolTip(geoCoord, e) {
+                        tooltip.innerHTML = '';
+                        tooltip.style.visibility = 'hidden';
+                        if (geoCoord) {
+                            var visible = false;
+                            var precision = globeView.controls.pixelsToDegrees(precisionPx);
+                            for (var i=0; i < layers.length; i++) {
+                                var layer = layers[i];
+                                    var result = itowns.FeaturesUtils.getFeaturesAtCoordinate(geoCoord, layer.feature, precision);
+                                    var id = 0;
+                                    if (result.points.length || result.lines.length || result.polygons.length) {
+                                        visible = true;
+
+                                        for (var p = 0; p < result.polygons.length; p++) {
+                                            var polygon = result.polygons[p];
+                                            var color = polygon.properties.fill || layer.style.fill;
+                                            var stroke = polygon.properties.stroke || layer.style.stroke;
+                                            var name = 'polygon' + id;
+                                            var symb = '<span id=' + name + ' >&#9724</span>';
+                                            tooltip.innerHTML += symb + ' ' + (polygon.properties.name || polygon.properties.nom || polygon.properties.description || layer.name) + '<br />';
+                                            document.getElementById(name).style['-webkit-text-stroke'] = '1.25px ' + stroke;
+                                            document.getElementById(name).style.color = color;
+                                            ++id;
+                                        }
+
+                                        for (var p = 0; p < result.lines.length; p++) {
+                                            var line = result.lines[p];
+                                            var color = line.properties.stroke || layer.style.stroke;
+                                            var symb = '<span style=color:' + color + ';>&#9473</span>';
+                                            tooltip.innerHTML += symb + ' ' + (line.name || layer.name) + '<br />';
+                                        }
+
+                                        for (var p = 0; p < result.points.length; p++) {
+                                            var point = result.points[p];
+                                            var color = 'white';
+                                            var name = 'point' + id;
+                                            var symb = '<span id=' + name + ' style=color:' + color + ';>&#9679</span>';
+                                            const label = point.properties.name || point.properties.description || layer.name;
+                                            tooltip.innerHTML += '<div>' + symb + ' ' +  label + '<br></div>';
+                                            tooltip.innerHTML += '<span class=coord>long ' + point.coordinates.longitude().toFixed(4) + '<br /></span>';
+                                            tooltip.innerHTML += '<span class=coord>lati &nbsp; ' + point.coordinates.latitude().toFixed(4) + '<br /></span>';
+                                            document.getElementById(name).style['-webkit-text-stroke']=`1px red`;
+                                            ++id;
+                                        }
+                                    }
+                            }
+                            if (visible) {
+                                tooltip.style.left = `${e.pageX}px`;
+                                tooltip.style.top = `${e.pageY}px`;
+                                tooltip.style.visibility = 'visible';
+                            }
+                        }
+                    }
+                    document.addEventListener('mousemove', readPosition, false);
+                    document.addEventListener('mousedown', pickPosition, false);
                 });
             });
         </script>
     </body>
 </html>
+
+
