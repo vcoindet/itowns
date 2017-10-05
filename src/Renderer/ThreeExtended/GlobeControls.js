@@ -1373,6 +1373,7 @@ function GlobeControls(view, target, radius, options = {}) {
     _handlerMouseMove = onMouseMove.bind(this);
     _handlerMouseUp = onMouseUp.bind(this);
 
+    // FIXME : problem with set target and set orbital
     this.waitSceneLoaded().then(() => {
         this.updateCameraTransformation();
         this._view.notifyChange(true, this.camera);
