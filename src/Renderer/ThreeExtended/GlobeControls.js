@@ -706,6 +706,9 @@ function GlobeControls(view, target, radius, options = {}) {
         const previousCameraTargetOnGlobe = cameraTargetOnGlobe.position.clone();
 
         // Get distance camera DME
+
+        // FIX IT rallenti, TODO faire convenablement
+        this._view.mainLoop._step(this._view);
         const pickingPosition = view.getPickingPositionFromDepth();
 
         if (!pickingPosition) {
