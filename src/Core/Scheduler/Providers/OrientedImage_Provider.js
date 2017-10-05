@@ -217,11 +217,19 @@ function sensorsInit(res, layer) {
         var sensor = {};
         sensor.id = s.id;
         var rotCamera2Pano = new THREE.Matrix3().fromArray(s.rotation);
+
+
+        var rotEspaceImage = new THREE.Matrix3().set(-1, 0, 0, 0, 1, 0, 0, 0, 1);
+        var rotTerrain = new THREE.Matrix3().set(0, 1, 0, 1, 0, 0, 0, 0, 1);
+
+        rotCamera2Pano = rotTerrain.clone().multiply(rotCamera2Pano.clone().multiply(rotEspaceImage));
+
         var centerCameraInPano = new THREE.Vector3().fromArray(s.position);
         var transPano2Camera = new THREE.Matrix4().makeTranslation(
             centerCameraInPano.x,
             centerCameraInPano.y,
             centerCameraInPano.z);
+        console.log(transPano2Camera);
         var projection = new THREE.Matrix3().fromArray(s.projection);
         var rotTexture2Pano = rotCamera2Pano.multiply(projection);
         var rotPano2Texture = rotTexture2Pano.clone().transpose();
@@ -253,8 +261,10 @@ function sensorsInit(res, layer) {
         U.size.value[i] = layer.sensors[i].size;
         U.mvpp.value[i] = new THREE.Matrix4();
         U.texture.value[i] = new THREE.Texture();
-        U.distortion.value[i] = layer.sensors[i].distortion;
-        U.pps.value[i] = layer.sensors[i].pps;
+        if (withDistort) {
+            U.distortion.value[i] = layer.sensors[i].distortion;
+            U.pps.value[i] = layer.sensors[i].pps;
+        }
     }
 
     // create the shader material for Three
@@ -269,6 +279,22 @@ function sensorsInit(res, layer) {
     });
     // loadOrientedImageData(layer.feature.features[0].properties.properties, layer);
 }
+
+OrientedImage_Provider.prototype.getNextPano = function getNextPano(layer) {
+    var geom = layer.feature.geometries[0];
+    var panoIndex = (layer.currentPano + 1) % layer.feature.features.length;
+    var P = geom.coordinates[panoIndex];
+    var cameraPosition = (new THREE.Vector3()).set(P._values[0], P._values[1], P._values[2]);
+    return { position: cameraPosition };
+};
+
+OrientedImage_Provider.prototype.getPreviousPano = function getPreviousPano(layer) {
+    var geom = layer.feature.geometries[0];
+    var panoIndex = (layer.currentPano - 1) % layer.feature.features.length;
+    var P = geom.coordinates[panoIndex];
+    var cameraPosition = (new THREE.Vector3()).set(P._values[0], P._values[1], P._values[2]);
+    return { position: cameraPosition };
+};
 
 OrientedImage_Provider.prototype.updateMaterial = function updateMaterial(camera, scene, layer) {
     var currentPos = camera.position.clone();
