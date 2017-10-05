@@ -137,11 +137,36 @@ const cameraTargetOnGlobe = new THREE.Object3D();
 const movingCameraTargetOnGlobe = new THREE.Vector3();
 var animatedScale = 0.0;
 
+// Position object on globe
+const positionObject = (function getPositionObjectFn()
+{
+    const quaterionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    return function positionObject(newPosition, object)
+    {
+        object.position.copy(newPosition);
+        object.lookAt(newPosition.clone().multiplyScalar(1.1));
+        object.quaternion.multiply(quaterionX);
+        object.updateMatrixWorld();
+    };
+}());
+
+// set new camera target on globe
+function setCameraTargetObjectPosition(newPosition) {
+    // Compute the new target position
+    positionObject(newPosition, cameraTargetOnGlobe);
+
+    cameraTargetOnGlobe.matrixWorldInverse.getInverse(cameraTargetOnGlobe.matrixWorld);
+}
+
 const ctrl = {
     progress: 0,
     quatGlobe,
     qDelta: new THREE.Quaternion(),
     dampingFactor: 0.25,
+    target: cameraTargetOnGlobe.position,
+    distance: 0,
+    lengthTarget: 0,
+    lengthCamera: 0,
 };
 
 ctrl.qDelta.presiceSlerp = presiceSlerp;
@@ -167,12 +192,27 @@ var dampingMoveAnimatedExpression = (function getDampMoveAniExprFn() {
     };
 }());
 
+function clampToGround(root) {
+    // diff altitude
+    const result = DEMUtils.getElevationValueAt(root.wgs84TileLayer, root.geoPosition);
+    if (result && result.z != root.geoPosition._values[2]) {
+        root.geoPosition._values[2] = result.z < 0 ? 0 : result.z;
+        root.distance = root.lengthTarget - root.geoPosition.as('EPSG:4978').xyz().length();
+    }
+    // translation
+    root.target.setLength(root.lengthTarget - root.distance * root.progress);
+    root.snapShotCamera.position.setLength(root.lengthCamera - root.distance * root.progress);
+}
+
 // Expression used to animate camera's moves and zoom
-var zoomCenterAnimatedExpression = function zoomCenterAnimatedExpression(root, progress) {
+function zoomCenterAnimatedExpression(root, progress) {
+    // Rotation
     root.quatGlobe.set(0, 0, 0, 1);
     root.progress = 1 - Math.pow((1 - (Math.sin((progress - 0.5) * Math.PI) * 0.5 + 0.5)), 2);
     root.quatGlobe.presiceSlerp(root.qDelta, root.progress);
-};
+    // clamp
+    clampToGround(root);
+}
 
 // Expression used to damp camera's moves
 var animationOrbitExpression = function animationOrbitExpression(root, progress) {
@@ -357,6 +397,7 @@ function GlobeControls(view, target, radius, options = {}) {
     this.domElement = view.mainLoop.gfxEngine.renderer.domElement;
 
     snapShotCamera = new SnapCamera(this.camera);
+    ctrl.snapShotCamera = snapShotCamera;
 
     this.waitSceneLoaded = function waitSceneLoaded() {
         const deferedPromise = defer();
@@ -673,27 +714,6 @@ function GlobeControls(view, target, radius, options = {}) {
 
     this.getSphericalDelta = function getSphericalDelta() {
         return sphericalDelta;
-    };
-
-    // Position object on globe
-    var positionObject = (function getPositionObjectFn()
-    {
-        const quaterionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-        return function positionObject(newPosition, object)
-        {
-            object.position.copy(newPosition);
-            object.lookAt(newPosition.clone().multiplyScalar(1.1));
-            object.quaternion.multiply(quaterionX);
-            object.updateMatrixWorld();
-        };
-    }());
-
-    // set new camera target on globe
-    const setCameraTargetObjectPosition = function setCameraTargetObjectPosition(newPosition) {
-        // Compute the new target position
-        positionObject(newPosition, cameraTargetOnGlobe);
-
-        cameraTargetOnGlobe.matrixWorldInverse.getInverse(cameraTargetOnGlobe.matrixWorld);
     };
 
     const direction = new THREE.Vector3();
@@ -1246,6 +1266,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
     // Callback launched when player is stopped
     this.resetControls = function resetControls() {
+        animatedScale = 0.0;
         lastRotation.splice(0);
         ctrl.progress = 0;
         updateCameraTargetOnGlobe.bind(this)();
@@ -1489,57 +1510,48 @@ GlobeControls.prototype.getCameraTargetPosition = function getCameraTargetPositi
  */
 GlobeControls.prototype.setCameraTargetPosition = function setCameraTargetPosition(position, isAnimated) {
     isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
-    const center = this.getCameraTargetPosition();
-
-    if (position.range) {
-        // Compensation of the altitude from the approximation of the ellipsoid by a sphere
-        // This approximation comes from the movements around the ellipsoid, are rotations with constant radius
-        const currentTargetPosition = new Coordinates(this._view.referenceCrs, center).as('EPSG:4326');
-        const targetOnEllipsoid = new C.EPSG_4326(currentTargetPosition.longitude(), currentTargetPosition.latitude(), 0)
-            .as(this._view.referenceCrs).xyz();
-        const compensation = position.length() - targetOnEllipsoid.length();
-        // FIX ME error with compensation negative
-        if (compensation > 0) {
-            position.range += compensation;
-        }
-    }
 
     snapShotCamera.shot(this.camera);
 
     ptScreenClick.x = this.domElement.width / 2;
     ptScreenClick.y = this.domElement.height / 2;
 
-    const vFrom = center.clone().normalize();
-    const vTo = position.normalize();
+    const vFrom = this.getCameraTargetPosition().clone().normalize();
+    const vTo = position.clone().normalize();
 
-    let promise;
+    ctrl.lengthTarget = cameraTargetOnGlobe.position.length();
+    ctrl.distance = ctrl.lengthTarget - position.length();
+    ctrl.lengthCamera = snapShotCamera.position.length();
+
+    if (position.range) {
+        animatedScale = 1.0 - position.range / this.getRange();
+    }
 
     if (isAnimated) {
         ctrl.qDelta.setFromUnitVectors(vFrom, vTo);
-        if (position.range) {
-            animatedScale = 1.0 - position.range / this.getRange();
-        }
         state = CONTROL_STATE.MOVE_GLOBE;
-        promise = player.play(animationZoomCenter).then(() => {
-            animatedScale = 0.0;
+        return player.play(animationZoomCenter).then(() => {
             this.resetControls();
+            this.waitSceneLoaded().then(() => {
+                this.updateCameraTransformation();
+            });
         });
-    }
-    else {
+    } else {
+        ctrl.progress = 1.0;
         quatGlobe.setFromUnitVectors(vFrom, vTo);
-        this.updateCameraTransformation(CONTROL_STATE.MOVE_GLOBE);
-        if (animatedScale > 0.0 && animatedScale < 1.0) {
-            this.setRange(this.getRange() * animatedScale);
-        }
-        promise = Promise.resolve();
-    }
-
-    return promise.then(() => {
-        this._view.notifyChange(true);
+        const cb = this._view.onAfterRender;
+        this._view.onAfterRender = () => {
+            cb();
+            clampToGround(ctrl);
+            this.updateCameraTransformation(CONTROL_STATE.MOVE_GLOBE, false);
+        };
+        this._view.onAfterRender();
         return this.waitSceneLoaded().then(() => {
-            this.updateCameraTransformation();
+            this.updateCameraTransformation(CONTROL_STATE.MOVE_GLOBE);
+            this._view.onAfterRender = cb;
+            ctrl.progress = 0.0;
         });
-    });
+    }
 };
 
 /**
@@ -1747,8 +1759,13 @@ GlobeControls.prototype.setScale = function setScale(scale, pitch, isAnimated) {
  */
 GlobeControls.prototype.setCameraTargetGeoPosition = function setCameraTargetGeoPosition(coordinates, isAnimated) {
     isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
-    const position = new C.EPSG_4326(coordinates.longitude, coordinates.latitude, 0)
-        .as('EPSG:4978').xyz();
+    ctrl.geoPosition = new C.EPSG_4326(coordinates.longitude, coordinates.latitude, 0);
+
+    const result = DEMUtils.getElevationValueAt(this._view.wgs84TileLayer, ctrl.geoPosition);
+    ctrl.geoPosition._values[2] = !result || result.z < 0 ? 0 : result.z;
+    ctrl.wgs84TileLayer = this._view.wgs84TileLayer;
+
+    const position = ctrl.geoPosition.as('EPSG:4978').xyz();
     position.range = coordinates.range;
     return this.setCameraTargetPosition(position, isAnimated);
 };
