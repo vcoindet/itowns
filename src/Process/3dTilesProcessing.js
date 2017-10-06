@@ -79,7 +79,19 @@ export function $3dTilesCulling(node, camera) {
     return false;
 }
 
+function removeChildren(n) {
+    for (const child of n.children) {
+        removeChildren(child);
+    }
+    n.remove(...n.children);
+}
+
+
 export function pre3dTilesUpdate(context, layer) {
+    if (!layer.visible) {
+        return [];
+    }
+
     // pre-sse
     const hypotenuse = Math.sqrt(context.camera.width * context.camera.width + context.camera.height * context.camera.height);
     const radAngle = context.camera.camera3D.fov * Math.PI / 180;
@@ -88,6 +100,51 @@ export function pre3dTilesUpdate(context, layer) {
     // const HFOV = 2.0 * Math.atan(Math.tan(radAngle * 0.5) / context.camera.ratio);
     const HYFOV = 2.0 * Math.atan(Math.tan(radAngle * 0.5) * hypotenuse / context.camera.width);
     context.camera.preSSE = hypotenuse * (2.0 * Math.tan(HYFOV * 0.5));
+
+    // once in a while, garbage collect
+    if (Math.random() < 0.98) {
+        const now = Date.now();
+        layer.root.traverse((n) => {
+            if (n.layer != layer.id) {
+                return;
+            }
+
+            // Browse children, and remove 'deletable' ones before
+            // 'traverse' method visit them.
+            for (let i = 0; i < n.children.length; i++) {
+                const c = n.children[i];
+                if (c.layer != layer.id) {
+                    continue;
+                }
+
+                if ((now - c.notVisibleSince) > (layer.cleanupDelay || 3000)) {
+                    c.traverse((o) => {
+                        // Note: we don't check o.layer since we're
+                        // going to remove 'c' from its parent so let's
+                        // clean all of its children.
+
+                        // free resources
+                        if (o.material) {
+                            o.material.dispose();
+                        }
+                        if (o.geometry) {
+                            o.geometry.dispose();
+                        }
+                        // we can't remove 'o' from 'c' yet,
+                        // because 'traverse' first applies the callback to a node
+                        // and then to its children.
+                    });
+
+                    // remove c children recursively
+                    removeChildren(c);
+                    delete c.content;
+                    n.remove(c);
+                    i--;
+                }
+            }
+        });
+    }
+
     return [layer.root];
 }
 
@@ -138,6 +195,15 @@ function setDisplayed(node, display) {
     }
 }
 
+function markForDeletion(elt) {
+    if (!elt.notVisibleSince) {
+        elt.notVisibleSince = Date.now();
+    }
+    for (const child of elt.children.filter(n => n.layer == elt.layer)) {
+        markForDeletion(child);
+    }
+}
+
 export function process3dTilesNode(cullingTest, subdivisionTest) {
     return function _process3dTilesNodes(context, layer, node) {
         // early exit if parent's subdivision is in progress
@@ -153,6 +219,9 @@ export function process3dTilesNode(cullingTest, subdivisionTest) {
         let returnValue;
 
         if (isVisible) {
+            node.notVisibleSince = undefined;
+
+
             if (node.pendingSubdivision || subdivisionTest(context, layer, node)) {
                 subdivideNode(context, layer, node);
                 // display iff children aren't ready
@@ -165,13 +234,17 @@ export function process3dTilesNode(cullingTest, subdivisionTest) {
             if ((node.material === undefined || node.material.visible)) {
                 for (const n of node.children.filter(n => n.layer == layer.id)) {
                     n.visible = false;
+                    if (!node.pendingSubdivision) {
+                        markForDeletion(n);
+                    }
                 }
             }
 
             return returnValue;
         }
 
-        // TODO: cleanup tree
+        markForDeletion(node);
+
         return undefined;
     };
 }
