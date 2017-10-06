@@ -1106,10 +1106,11 @@ function GlobeControls(view, target, radius, options = {}) {
                     var immersiveSphere = view.scene.getObjectByName('immersiveSphere');
                     if (immersiveSphere) {
                         this.camera.position.copy(immersiveSphere.position);
+                        this.camera.updateMatrixWorld();
+                        this._view.notifyChange(true, this.camera);
                         // animatedScale = 0.6;
                         // this.setCameraTargetPosition(immersiveSphere.position.clone(), this.isAnimationEnabled());
                     }
-
                     break;
                 default:
             }
