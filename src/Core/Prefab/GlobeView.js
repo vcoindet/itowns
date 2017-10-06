@@ -521,4 +521,9 @@ GlobeView.prototype.updateMaterialUniform = function updateMaterialUniform(unifo
     }
 };
 
+GlobeView.prototype.setZFactor = function setZFactor(value) {
+    this.updateMaterialUniform('zFactor', value);
+    this.notifyChange(true);
+};
+
 export default GlobeView;
