@@ -93,7 +93,7 @@ globeView.addLayer({
         },
         style: {
             altitude: function altitude(properties) { return properties.z_min - properties.hauteur; },
-            extrude: function extrude(properties) { return properties.hauteur + 5; },
+            extrude: function extrude(properties) { return properties.hauteur + 15; },
             textureLayer: result.shaderMat,
         },
         ipr: 'IGN',

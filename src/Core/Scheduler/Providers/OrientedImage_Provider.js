@@ -219,17 +219,17 @@ function sensorsInit(res, layer) {
         var rotCamera2Pano = new THREE.Matrix3().fromArray(s.rotation);
 
 
-        var rotEspaceImage = new THREE.Matrix3().set(-1, 0, 0, 0, 1, 0, 0, 0, 1);
-        var rotTerrain = new THREE.Matrix3().set(0, 1, 0, 1, 0, 0, 0, 0, 1);
+        // var rotEspaceImage = new THREE.Matrix3().set(-1, 0, 0, 0, 1, 0, 0, 0, 1);
+        // var rotTerrain = new THREE.Matrix3().set(0, 1, 0, 1, 0, 0, 0, 0, 1);
 
-        rotCamera2Pano = rotTerrain.clone().multiply(rotCamera2Pano.clone().multiply(rotEspaceImage));
+        // rotCamera2Pano = rotTerrain.clone().multiply(rotCamera2Pano.clone().multiply(rotEspaceImage));
 
         var centerCameraInPano = new THREE.Vector3().fromArray(s.position);
         var transPano2Camera = new THREE.Matrix4().makeTranslation(
             centerCameraInPano.x,
             centerCameraInPano.y,
             centerCameraInPano.z);
-        console.log(transPano2Camera);
+        // console.log(transPano2Camera);
         var projection = new THREE.Matrix3().fromArray(s.projection);
         var rotTexture2Pano = rotCamera2Pano.multiply(projection);
         var rotPano2Texture = rotTexture2Pano.clone().transpose();
@@ -303,7 +303,7 @@ OrientedImage_Provider.prototype.updateMaterial = function updateMaterial(camera
     // if necessary create the sphere
     if (!layer.sphere) {
         // On cree une sphere et on l'ajoute a la scene
-        var geometry = new THREE.SphereGeometry(100, 32, 32);
+        var geometry = new THREE.SphereGeometry(1, 32, 32);
         // var material = layer.shaderMat;
         var material = new THREE.MeshPhongMaterial({ color: 0x7777ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5, wireframe: true });
         layer.sphere = new THREE.Mesh(geometry, material);
