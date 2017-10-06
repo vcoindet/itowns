@@ -25,13 +25,13 @@ and open the template in the editor.
         <meta charset="UTF-8">
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="examples/GUI/dat.gui/dat.gui.min.js"></script>
+        <script src="GUI/dat.gui/dat.gui.min.js"></script>
     </head>
     <body>
         <div id="viewerDiv"></div>
-        <script src="examples/GUI/GuiTools.js"></script>
-        <script src="dist/itowns.js"></script>
-        <script src="dist/debug.js"></script>
+        <script src="GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="../dist/debug.js"></script>
         <script type="text/javascript">
             /* global itowns,document,GuiTools*/
 
@@ -44,9 +44,11 @@ and open the template in the editor.
             menuGlobe.view = globeView;
 
             var promises = []
-            promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/GeoidTexture.json').then(function(result) { return globeView.addLayer(result); }));
-            promises.push(itowns.Fetcher.json('examples/layers/JSONLayers/GeoidMNT.json').then(function(result) { return globeView.addLayer(result); }));
-
+            promises.push(itowns.Fetcher.json('layers/JSONLayers/GeoidTexture.json').then(function(result) { return globeView.addLayer(result); }));
+            //promises.push(itowns.Fetcher.json('layers/JSONLayers/Ortho.json').then(function(result) { return globeView.addLayer(result); }));
+            promises.push(itowns.Fetcher.json('layers/JSONLayers/GeoidMNT.json').then(function(result) { return globeView.addLayer(result); }));
+            //promises.push(itowns.Fetcher.json('layers/JSONLayers/IGN_MNT.json').then(function(result) { return globeView.addLayer(result); }));
+            
             menuGlobe.addGUI('RealisticLighting', false,
                 function(newValue) { globeView.setRealisticLightingOn(newValue); });
 
@@ -61,8 +63,8 @@ and open the template in the editor.
                 console.info('Globe initialized');
             });
 
-            const d = new debug.Debug(globeView, menuGlobe.gui);
-            debug.createGeoidDebugUI(menuGlobe.gui, globeView, globeView.wgs84TileLayer, d);
+            // const d = new debug.Debug(globeView, menuGlobe.gui);
+            //debug.createGeoidDebugUI(menuGlobe.gui, globeView, globeView.wgs84TileLayer, d);
             window.globeView = globeView;
 </script>
     </body>

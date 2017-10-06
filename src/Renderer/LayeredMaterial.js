@@ -174,7 +174,7 @@ const LayeredMaterial = function LayeredMaterial(options) {
 
     this.uniforms.opacity = new THREE.Uniform(1.0);
     
-    this.uniforms.zFactor = new THREE.Uniform(0.0);
+    this.uniforms.zFactor = new THREE.Uniform(1.0);
 
     this.colorLayersId = [];
     this.elevationLayersId = [];
