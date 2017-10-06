@@ -194,7 +194,7 @@ var dampingMoveAnimatedExpression = (function getDampMoveAniExprFn() {
 
 function clampToGround(root) {
     // diff altitude
-    const result = DEMUtils.getElevationValueAt(root.wgs84TileLayer, root.geoPosition);
+    const result = DEMUtils.getElevationValueAt(root.view.wgs84TileLayer, root.geoPosition);
     if (result && result.z != root.geoPosition._values[2]) {
         root.geoPosition._values[2] = result.z < 0 ? 0 : result.z;
         root.distance = root.lengthTarget - root.geoPosition.as('EPSG:4978').xyz().length();
@@ -398,6 +398,7 @@ function GlobeControls(view, target, radius, options = {}) {
 
     snapShotCamera = new SnapCamera(this.camera);
     ctrl.snapShotCamera = snapShotCamera;
+    ctrl.view = view;
 
     this.waitSceneLoaded = function waitSceneLoaded() {
         const deferedPromise = defer();
@@ -1509,6 +1510,10 @@ GlobeControls.prototype.getCameraTargetPosition = function getCameraTargetPositi
  * @return {Promise<void>}
  */
 GlobeControls.prototype.setCameraTargetPosition = function setCameraTargetPosition(position, isAnimated) {
+    if (!ctrl.geoPosition) {
+        ctrl.geoPosition = new Coordinates('EPSG:4978', position).as('EPSG:4326');
+    }
+
     isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
 
     snapShotCamera.shot(this.camera);
@@ -1534,6 +1539,7 @@ GlobeControls.prototype.setCameraTargetPosition = function setCameraTargetPositi
             this.resetControls();
             this.waitSceneLoaded().then(() => {
                 this.updateCameraTransformation();
+                ctrl.geoPosition = null;
             });
         });
     } else {
@@ -1549,6 +1555,7 @@ GlobeControls.prototype.setCameraTargetPosition = function setCameraTargetPositi
         return this.waitSceneLoaded().then(() => {
             this.updateCameraTransformation(CONTROL_STATE.MOVE_GLOBE);
             this._view.onAfterRender = cb;
+            ctrl.geoPosition = null;
             ctrl.progress = 0.0;
         });
     }
@@ -1760,10 +1767,8 @@ GlobeControls.prototype.setScale = function setScale(scale, pitch, isAnimated) {
 GlobeControls.prototype.setCameraTargetGeoPosition = function setCameraTargetGeoPosition(coordinates, isAnimated) {
     isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
     ctrl.geoPosition = new C.EPSG_4326(coordinates.longitude, coordinates.latitude, 0);
-
     const result = DEMUtils.getElevationValueAt(this._view.wgs84TileLayer, ctrl.geoPosition);
     ctrl.geoPosition._values[2] = !result || result.z < 0 ? 0 : result.z;
-    ctrl.wgs84TileLayer = this._view.wgs84TileLayer;
 
     const position = ctrl.geoPosition.as('EPSG:4978').xyz();
     position.range = coordinates.range;
