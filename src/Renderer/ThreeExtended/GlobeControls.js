@@ -381,6 +381,8 @@ function defer() {
     return deferedPromise;
 }
 
+let initPromise;
+
 /* globals document,window */
 
 /**
@@ -1374,10 +1376,8 @@ function GlobeControls(view, target, radius, options = {}) {
     _handlerMouseMove = onMouseMove.bind(this);
     _handlerMouseUp = onMouseUp.bind(this);
 
-    // FIXME : problem with set target and set orbital
-    this.waitSceneLoaded().then(() => {
+    initPromise = this.waitSceneLoaded().then(() => {
         this.updateCameraTransformation();
-        this._view.notifyChange(true, this.camera);
     });
 }
 
@@ -1437,30 +1437,32 @@ GlobeControls.prototype.setRange = function setRange(range, isAnimated) {
  * @return {Promise<void>}
  */
 GlobeControls.prototype.setOrbitalPosition = function setOrbitalPosition(position, isAnimated) {
-    this.updateCameraTransformation();
-    let current = this.getCameraTargetPosition();
-    isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
-    const deltaPhi = position.tilt === undefined ? 0 : position.tilt * Math.PI / 180 - this.getTiltRad();
-    const deltaTheta = position.heading === undefined ? 0 : position.heading * Math.PI / 180 - this.getHeadingRad();
-    const deltaRange = position.range === undefined ? 0 : position.range - this.getRange();
-    const cb = this._view.onAfterRender;
-    this._view.onAfterRender = () => {
-        cb();
-        const newTarget = this._view.getPickingPositionFromDepth();
-        const range = current.length();
-        const errorRange = range - current.dot(newTarget) / range;
-        if (isAnimated) {
-            sphericalTo.radius += errorRange;
-        } else {
-            this.moveOrbitalPosition(errorRange, 0, 0, false);
-        }
-        current = newTarget;
-    };
-    return this.moveOrbitalPosition(deltaRange, deltaTheta, deltaPhi, isAnimated).then(() => {
-        this._view.notifyChange(true);
-        return this.waitSceneLoaded().then(() => {
-            this.updateCameraTransformation();
-            this._view.onAfterRender = cb;
+    return initPromise.then(() => {
+        this.updateCameraTransformation();
+        let current = this.getCameraTargetPosition();
+        isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
+        const deltaPhi = position.tilt === undefined ? 0 : position.tilt * Math.PI / 180 - this.getTiltRad();
+        const deltaTheta = position.heading === undefined ? 0 : position.heading * Math.PI / 180 - this.getHeadingRad();
+        const deltaRange = position.range === undefined ? 0 : position.range - this.getRange();
+        const cb = this._view.onAfterRender;
+        this._view.onAfterRender = () => {
+            cb();
+            const newTarget = this._view.getPickingPositionFromDepth();
+            const range = current.length();
+            const errorRange = range - current.dot(newTarget) / range;
+            if (isAnimated) {
+                sphericalTo.radius += errorRange;
+            } else {
+                this.moveOrbitalPosition(errorRange, 0, 0, false);
+            }
+            current = newTarget;
+        };
+        return this.moveOrbitalPosition(deltaRange, deltaTheta, deltaPhi, isAnimated).then(() => {
+            this._view.notifyChange(true);
+            return this.waitSceneLoaded().then(() => {
+                this.updateCameraTransformation();
+                this._view.onAfterRender = cb;
+            });
         });
     });
 };
@@ -1767,14 +1769,16 @@ GlobeControls.prototype.setScale = function setScale(scale, pitch, isAnimated) {
  * @return {Promise} A promise that resolves when the next 'globe initilazed' event fires.
  */
 GlobeControls.prototype.setCameraTargetGeoPosition = function setCameraTargetGeoPosition(coordinates, isAnimated) {
-    isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
-    ctrl.geoPosition = new C.EPSG_4326(coordinates.longitude, coordinates.latitude, 0);
-    const result = DEMUtils.getElevationValueAt(this._view.wgs84TileLayer, ctrl.geoPosition);
-    ctrl.geoPosition._values[2] = !result || result.z < 0 ? 0 : result.z;
+    return initPromise.then(() => {
+        isAnimated = isAnimated === undefined ? this.isAnimationEnabled() : isAnimated;
+        ctrl.geoPosition = new C.EPSG_4326(coordinates.longitude, coordinates.latitude, 0);
+        const result = DEMUtils.getElevationValueAt(this._view.wgs84TileLayer, ctrl.geoPosition);
+        ctrl.geoPosition._values[2] = !result || result.z < 0 ? 0 : result.z;
 
-    const position = ctrl.geoPosition.as('EPSG:4978').xyz();
-    position.range = coordinates.range;
-    return this.setCameraTargetPosition(position, isAnimated);
+        const position = ctrl.geoPosition.as('EPSG:4978').xyz();
+        position.range = coordinates.range;
+        return this.setCameraTargetPosition(position, isAnimated);
+    });
 };
 
 /**
