@@ -92,8 +92,26 @@ MainLoop.prototype._step = function _step(view, timestamp) {
 
     // update camera
     const dim = this.gfxEngine.getWindowSize();
+    const foo = (dim.width != view.camera.width || dim.height != view.camera.height);
+
+    const animator = {
+        t: 0,
+        update: (dt, ignore) => {
+            this.t = ignore ? 0 : Math.min(1, dt / 1000 + this.t);
+
+            if (this.t < 1) {
+                if (foo) {
+                    view.controls.updateCamera();
+                    view.removeFrameRequester(animator);
+                }
+            } else {
+                view.removeFrameRequester(animator);
+            }
+        },
+    };
 
     view.camera.update(dim.x, dim.y);
+    view.addFrameRequester(animator);
 
     // Disable camera's matrix auto update to make sure the camera's
     // world matrix is never updated mid-update.
