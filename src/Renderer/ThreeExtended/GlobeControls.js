@@ -1360,6 +1360,7 @@ function GlobeControls(view, target, radius, options = {}) {
         const layerTHREEjs = view.mainLoop.gfxEngine.getUniqueThreejsLayer();
         cameraTargetOnGlobe.layers.set(layerTHREEjs);
         helperTarget.layers.set(layerTHREEjs);
+        pickingHelper.layers.set(layerTHREEjs);
         cameraTargetOnGlobe.layers.set(layerTHREEjs);
         this.camera.layers.enable(layerTHREEjs);
     }
