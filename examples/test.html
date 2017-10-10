@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>iTowns - Enigme 2</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+            html {
+                height: 100%;
+            }
+
+            body {
+                margin: 0;
+                overflow:hidden;
+                height:100%;
+            }
+
+            #viewerDiv {
+                margin : auto auto;
+                width: 100%;
+                height: 100%;
+                padding: 0;
+            }
+
+            #miniDiv {
+                display: block;
+                margin-bottom: 20px;
+                margin-right: 20px;
+                position: absolute;
+                width:100px;
+                height:100px;
+                left: 20;
+                bottom: 0;
+                color: white;
+            }
+
+            #menuDiv {
+                position: absolute;
+                top:0px;
+                margin-left: 0px;
+            }
+            #Forca {
+			      position: absolute;
+			      top: 1rem;
+			      right: 1rem;
+			      width: 25rem;
+			      box-shadow: 1px 1px 10px #555;
+			      font: 11px Lucida Grande,sans-serif;
+			      color: #eee;
+			      padding: 0.5rem;
+			      background-color: black;
+			      opacity:0.8;
+			}
+			#Forca li {
+				list-style: none;
+				font-size: 1.3em;
+			}
+			#Form {
+			      position: absolute;
+			      bottom: 1rem;
+			      left: 1rem;
+			      width: 30rem;
+			      box-shadow: 1px 1px 10px #555;
+			      font: 11px Lucida Grande,sans-serif;
+			      color: #eee;
+			      background-color: red;
+			      opacity:0.8;
+			}
+
+            #form2 {
+            	list-style: none;
+            	display: flex;
+            	justify-content: space-around;
+            	padding: 0;
+            	margin:0;
+            }
+            #FormTest {
+			      position: absolute;
+			      bottom: 1rem;
+			      right: 1rem;
+			      width: 20rem;
+			      box-shadow: 1px 1px 10px #555;
+			      font: 11px Lucida Grande,sans-serif;
+			      color: #eee;
+			      background-color: red;
+			      opacity:0.8;
+			      display: none;
+			}
+
+            #formTest2 {
+            	list-style: none;
+            	display: flex;
+            	justify-content: space-around;
+            	padding: 0;
+            	margin:0;
+            }
+
+            .button {
+            	padding: 5px 10px;
+            	margin-top:11px;
+            	color: #eee;
+			    border-radius: 4px;
+			    background-color: #6820D9;
+			    background-image: linear-gradient(#AE3AEB, #8429E1 50%, transparent 50%);
+			    box-shadow: 0 1px 0 rgba(255,255,255,.1), 
+			                0 0 1px 1px rgba(255,255,255,.3) inset,
+			                0 1px rgba(255,255,255,.4) inset;
+			    border: 1px solid black;
+			    text-shadow: 0 1px 1px rgba(0,0,0,.8);
+			    outline:none;
+            }
+            .button:hover, .button:focus {
+			    color: white;
+			    background-color: #9b30ff;
+			    box-shadow: 0 1px 0 rgba(255,255,255,.1), 
+			                0 0 1px 1px rgba(255,255,255,.3) inset,
+			                0 1px rgba(255,255,255,.4) inset, 
+			                0 0 5px rgba(174,58,235,1);
+			    border-color: rgba(255, 255, 255, .2);
+			}
+
+			.button:active {
+			    background-color: #7424bf;
+			    box-shadow: 0 1px 2px rgba(0,0,0,.6) inset,
+			                0 1px 0 rgba(255,255,255,.3);
+			    border: 1px solid black;
+			}
+            #red {
+            	color: #1E90FF;
+            }
+            #buttonVisi {
+            	visibility : hidden;
+            }
+            #premier {
+            	display: flex;
+            	justify-content : space-between;
+            }
+            #ButNantes{
+            	visibility: hidden;
+            	display: none;
+            }
+            #phrase, #phrase2, #phrase3 {
+            	visibility: hidden;
+            	display: none;
+            }
+            #phrase3 {
+            	color: #1E90FF;
+            }
+
+
+            @media (max-width: 600px) {
+                #menuDiv {
+                    display: none;
+                }
+            }
+		</style>
+	</head>
+
+	<body>
+		<div id="viewerDiv">
+			<div id="Forca">
+				<ul>
+					<li>Comment utiliser iTowns ?</li>
+					<li>-> Zoomez avec la mollette de la souris</li>
+					<li>-> Déplacez vous avec le clic gauche de la souris</li>
+					<li>-> Changez le point de vue avec CTRL + clic</li>
+					<li id="red">-> Trouvez les coordonnées de l'indice ! ;-)</li>
+				</ul>
+				<ul id="premier">
+					<li><button id="button" class="button "type="button" onclick="Aeorop()">Aéroport de Nice</button></li>
+					<li><button id="buttonVisi" class="button" type="button" onclick="Mesh1()">Première Coordonnée ?</button></li>
+				</ul>
+				<ul>
+					<li id="phrase">Avez vous trouvé la première partie des coordonnées ? Cliquez sur le bouton suivant : </li>
+				</ul>
+				<ul id="deuxieme">
+					<li><button id="ButNantes" class="button "type="button" onclick="Gare()">Gare de Nantes</button></li>
+				</ul>
+				<ul>
+					<li id="phrase2">Conseil : Zoomez/Dézoomez, changez le point de vue ! ;)</li>
+				</ul>
+				<ul>
+					<li id="phrase3">Vous pouvez maintenant trouver l'indice !</li>
+				</ul>
+			</div>
+			<div id="Form">
+				<ul id="form2">
+					<li><p>Long: <input id="long" placeholder="???"></p></li>
+					<li><p> Lat: <input id="lat" placeholder="???"></p></li>
+					<li><button id="button" class="button" type="button" onclick="Lure()">Go !</button></li>
+				</ul>
+			</div>
+			<div id="FormTest">
+				<ul id="formTest2">
+					<li><p>Tester l'indice: <input id="test" placeholder="???"></p></li>
+					<li><button id="button2" class="button" type="button" onclick="Fin()">Go !</button></li>
+				</ul>
+			</div>
+		</div>
+		<script src="GUI/dat.gui/dat.gui.min.js"></script>
+		<script src="GUI/GuiTools.js"></script>
+		<script src="../dist/itowns.js"></script>
+		<script type="text/javascript">var THREE = itowns.THREE;</script>
+		<script type="text/javascript">
+            var renderer;
+            var exports = {};
+
+            var Aeorop = function() {
+            	globeView.controls.setTilt(0).then(() => {
+            		globeView.controls.setCameraTargetGeoPositionAdvanced({longitude: 7.210311583118368, latitude: 43.65976253399402, range: 50000, tilt: 75, heading: 90}).then(() => {
+            			var butVisi = document.getElementById("buttonVisi");
+            			if (butVisi.style.visibility = 'hidden') {
+            				butVisi.style.visibility = 'visible';
+            			}
+            		});
+            	});
+            	var butt = document.getElementById('button');
+			    butt.style.display = 'none';
+			    butt.style.visibility = 'hidden';
+            }
+
+            var Gare = function() {
+            	globeView.controls.setTilt(0).then(() => {
+            		globeView.controls.setCameraTargetGeoPositionAdvanced({longitude: -1.5172526526695322, latitude: 47.22571476735228, range: 60000, tilt: 0, heading: 90}).then(() => {
+            			var coin_sides_texture2 = THREE.ImageUtils.loadTexture("44_2.png");
+					    var coin_sides_mat2 = new THREE.MeshLambertMaterial({map:coin_sides_texture2});
+					    var geometry2 = new THREE.CylinderGeometry(80, 0, 100, 28);
+					    var material12 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+					    var materialsArray2 = [];
+
+					    var material12 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+					    materialsArray2.push(material12);
+					    materialsArray2.push(coin_sides_mat2);
+					    var material2 = new THREE.MeshFaceMaterial(materialsArray2);
+					    var aFaces2 = geometry2.faces.length;
+						for(var i=0;i<aFaces2;i++) {
+						  if(i < 28){
+						    geometry2.faces[i].materialIndex = 0;
+						  }else{
+						    geometry2.faces[i].materialIndex = 1;
+						  }
+						}
+
+					    var mesh2 = new THREE.Mesh(geometry2, material2);
+
+					    // get the position on the globe, from the camera
+					    var cameraTargetPosition2 = globeView.controls.getCameraTargetGeoPosition();
+
+					    // position of the mesh
+					    var meshCoord2 = new itowns.Coordinates('EPSG:4326', -1.5650170987872516, 47.20241113286684, 50);
+
+					    // position and orientation of the mesh
+					    mesh2.position.copy(meshCoord2.as(globeView.referenceCrs).xyz());
+					    mesh2.lookAt(new THREE.Vector3(0, 0, 0));
+					    mesh2.rotateX(3 * Math.PI / 2);
+					    mesh2.rotateY(3 * Math.PI / 2);
+
+					    // update coordinate of the mesh
+					    mesh2.updateMatrixWorld();
+					    // globeView.scene.add(mesh2);
+					    // globeView.notifyChange(true);
+					    globeView.controls.addEventListener('range-changed', () => {
+							if (globeView.controls.getRange() < 7000) {
+									globeView.scene.add(mesh2);
+									globeView.notifyChange(true);
+						    }else {
+						    	globeView.scene.remove(mesh2);
+						    }
+						});
+
+					    var phrase2 = document.getElementById('phrase2');
+					    phrase2.style.display = 'block';
+					    phrase2.style.visibility = 'visible';
+
+            		});
+            	});
+            }
+
+            var Mesh1 = function() {
+            	var THREE = itowns.THREE;
+			    var coin_sides_texture = THREE.ImageUtils.loadTexture("6.png");
+			    var coin_sides_mat = new THREE.MeshLambertMaterial({map:coin_sides_texture});
+			    var geometry = new THREE.CylinderGeometry(50, 0, 100, 28);
+			    var material1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+			    var materialsArray = [];
+
+			    var material1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+			    // var material2 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+			    materialsArray.push(material1);
+			    materialsArray.push(coin_sides_mat);
+			    var material = new THREE.MeshFaceMaterial(materialsArray);
+			    var aFaces = geometry.faces.length;
+				for(var i=0;i<aFaces;i++) {
+				  if(i < 28){
+				    geometry.faces[i].materialIndex = 0;
+				  }else{
+				    geometry.faces[i].materialIndex = 1;
+				  }
+				}
+
+			    var mesh = new THREE.Mesh(geometry, material);
+
+			    // get the position on the globe, from the camera
+			    var cameraTargetPosition = globeView.controls.getCameraTargetGeoPosition();
+
+			    // position of the mesh
+			    var meshCoord = new itowns.Coordinates('EPSG:4326', 7.210311583118368, 43.65976253399402, 60);
+
+			    // position and orientation of the mesh
+			    mesh.position.copy(meshCoord.as(globeView.referenceCrs).xyz());
+			    mesh.lookAt(new THREE.Vector3(0, 0, 0));
+			    mesh.rotateX(3 * Math.PI / 2);
+			    mesh.rotateY(3 * Math.PI / 2);
+
+			    // update coordinate of the mesh
+			    mesh.updateMatrixWorld();
+			    globeView.scene.add(mesh);
+			    globeView.notifyChange(true);
+
+			    var butNantes = document.getElementById('ButNantes');
+			    butNantes.style.display = 'block';
+			    butNantes.style.visibility = 'visible';
+			    var phrase = document.getElementById('phrase');
+			    phrase.style.display = 'block';
+			    phrase.style.visibility = 'visible';
+
+            }
+
+            var Lure = function() {
+            	var long = document.getElementById("long").value;
+            	var lat = document.getElementById("lat").value;
+            	if (long == 44 && lat == 6) {
+            		alert("Oups... La longitude et la latitude semblent être inversées !");
+            	} else if (long != 6 || lat != 44) {
+            		alert("Oups... Ce ne sont pas les coordonnées de l'indice !");
+            	} else {
+            		alert("BRAVO, vous avez trouvé les bonnes coordonnées : l'indice se trouve au sommet de la montagne de Lure ! Il peut être long et fatigant de s'y déplacer, mais iTowns vous propose de vous y rendre en 1 clic ! ;)");
+            		globeView.controls.setTilt(0).then(() => {
+
+            			var butNantes = document.getElementById('ButNantes');
+					    butNantes.style.display = 'none';
+					    butNantes.style.visibility = 'hidden';
+					    var phrase = document.getElementById('phrase');
+					    phrase.style.display = 'none';
+					    phrase.style.visibility = 'hidden';
+					    var phrase2 = document.getElementById('phrase2');
+					    phrase2.style.display = 'none';
+					    phrase2.style.visibility = 'hidden';
+					    var butVisi = document.getElementById('buttonVisi');
+					    butVisi.style.display = 'none';
+					    butVisi.style.visibility = 'hidden';
+					    var button = document.getElementById('button');
+					    button.style.display = 'none';
+					    button.style.visibility = 'hidden';
+					    var phrase3 = document.getElementById('phrase3');
+					    phrase3.style.display = 'block';
+					    phrase3.style.visibility = 'visible';
+
+            			var coin_sides_texture3 = THREE.ImageUtils.loadTexture("dixsept2.png");
+			    		var coin_sides_mat3 = new THREE.MeshLambertMaterial({map:coin_sides_texture3});
+            			var geometry3 = new THREE.CircleGeometry( 50, 30 );
+						var material3 = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+						var mesh3 = new THREE.Mesh(geometry3, coin_sides_mat3);
+						
+            			globeView.controls.setCameraTargetGeoPositionAdvanced({longitude: 5.80257, latitude: 44.123051, range: 8000, tilt: 75, heading: 87});
+            			var cameraTargetPosition = globeView.controls.getCameraTargetGeoPosition();
+
+					    // position of the mesh
+					    var meshCoord3 = new itowns.Coordinates('EPSG:4326', 5.80257, 44.123051, 2100);
+
+					    // position and orientation of the mesh
+					    mesh3.position.copy(meshCoord3.as(globeView.referenceCrs).xyz());
+					    mesh3.lookAt(new THREE.Vector3(0, 0, 0));
+					    mesh3.rotateX(3 * Math.PI / 2);
+					    mesh3.rotateY(0 * Math.PI / 2);
+					    
+					    // update coordinate of the mesh
+					    mesh3.updateMatrixWorld();
+					    // globeView.getLayers(layer => layer.id === 'ScanEX')[0].visible = false;
+					    globeView.notifyChange(true);
+					    globeView.scene.add( mesh3 );
+					    mesh3.visible = false;
+
+					    var params = {color: 0xc51010 };
+					    var material4 = new THREE.MeshBasicMaterial( params.color );
+					    menuGlobe.gui.open();
+	            		var folder = menuGlobe.gui.addFolder("Indice");
+	            		folder.open();
+	            		var geometry4 = new THREE.CylinderGeometry( 10, 10, 250, 10 );
+						
+						var mesh4 = new THREE.Mesh(geometry4, material4);
+						var meshCoord4 = new itowns.Coordinates('EPSG:4326', 5.80257, 44.123051, 1925);
+						mesh4.position.copy(meshCoord4.as(globeView.referenceCrs).xyz());
+					    mesh4.lookAt(new THREE.Vector3(0, 0, 0));
+					    mesh4.rotateX(3 * Math.PI / 2);
+					    mesh4.rotateY(0 * Math.PI / 2);
+					    mesh4.updateMatrixWorld();
+					    mesh4.visible = false
+					    var FormTest = document.getElementById('FormTest');
+					    folder.add({ visible: false }, 'visible').onChange((function updateVisibility(value) {
+					    	FormTest.style.display = 'block';
+					    	globeView.scene.add( mesh3 );
+					    	globeView.scene.add( mesh4 );
+					    	mesh3.visible = true;
+					    	mesh4.visible = true;
+					        globeView.notifyChange(true);
+					    }));
+					    folder.addColor(params, 'color').onChange(update);
+					    var update = function () {
+					        var colorObj = new THREE.Color( params.color );
+					        material4 = new THREE.MeshBasicMaterial( params.color );
+					        mesh4 = new THREE.Mesh(geometry4, material4);
+					        globeView.scene.add( mesh4 );
+					        globeView.notifyChange(true);
+					    };
+            		})
+            		
+            	}
+            }
+
+            var Fin = function() {
+            	var result = document.getElementById("test").value;
+            	if (result != 17) {
+            		alert('Ce n\'est pas le bon indice');
+            	} else {
+            		alert('Félicitation, l\'indice est bien "17". 17 pour 2017, qui correspond à l\'année de lancement d\'iTownsV2.');
+            		globeView.controls.setTilt(0).then(() => {
+            			globeView.controls.setCameraTargetGeoPositionAdvanced({longitude: 2.351323, latitude: 48.856712, range: 25000000, heading: 90});
+            		});
+            		var forca = document.getElementById('Forca');
+            		var Form = document.getElementById('Form');
+            		var result2 = document.getElementById('formTest2');
+            		result2.style.display = 'none';
+            		forca.style.display = 'none';
+            		Form.style.display = 'none';
+            	}
+            }
+
+            /* global itowns, document, renderer, GuiTools, Promise */
+			// # Simple Globe viewer
+			// Position near Gerbier mountain.
+			var positionOnGlobe = { longitude: 2.351323, latitude: 48.856712, altitude: 25000000 };
+
+			// `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
+			var viewerDiv = document.getElementById('viewerDiv');
+
+			// Instanciate iTowns GlobeView*
+			var globeView = new itowns.GlobeView(viewerDiv, positionOnGlobe, { renderer: renderer });
+
+			var promises = [];
+
+			var menuGlobe = new GuiTools('menuDiv');
+			console.log(menuGlobe);
+
+			// menuGlobe.view = globeView;
+
+			function addLayerCb(layer) {
+			    return globeView.addLayer(layer);
+			}
+			// Add one imagery layer to the scene
+			// This layer is defined in a json file but it could be defined as a plain js
+			// object. See Layer* for more info.
+			promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(addLayerCb));
+			// promises.push(itowns.Fetcher.json('./layers/JSONLayers/ScanEX.json').then(function(result) { return globeView.addLayer(result); }));
+			// // Add two elevation layers.
+			// These will deform iTowns globe geometry to represent terrain elevation.
+			promises.push(itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addLayerCb));
+			promises.push(itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addLayerCb));
+
+			exports.view = globeView;
+			exports.initialPosition = positionOnGlobe;
+
+			// Listen for globe full initialisation event
+			globeView.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
+			    // eslint-disable-next-line no-console
+			    console.info('Globe initialized');
+			    Promise.all(promises).then(function () {
+			        // menuGlobe.addImageryLayersGUI(globeView.getLayers(function (l) { return l.type === 'color'; }));
+			        // menuGlobe.addElevationLayersGUI(globeView.getLayers(function (l) { return l.type === 'elevation'; }));			        
+			    });
+			});
+
+        </script>
+		<!-- // <script src="test.js"></script> -->
+
+	</body>
+</html>

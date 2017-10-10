@@ -30,8 +30,8 @@ function GuiTools(domId, view, w) {
     this.gui = new dat.GUI({ autoPlace: false, width: width });
     this.gui.domElement.id = domId;
     viewerDiv.appendChild(this.gui.domElement);
-    this.colorGui = this.gui.addFolder('Color Layers');
-    this.elevationGui = this.gui.addFolder('Elevation Layers');
+    // this.colorGui = this.gui.addFolder('Color Layers');
+    // this.elevationGui = this.gui.addFolder('Elevation Layers');
 
     if (view) {
         view.addEventListener('layers-order-changed', (function refreshColorGui() {
